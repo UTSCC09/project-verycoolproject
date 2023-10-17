@@ -8,7 +8,7 @@
 - Darren Trieu
 
 ## Description of the Web Application:
-ActItOut is an online web application that makes Charades online and accessible to anyone from anywhere. Players will act out words or phrases using live video, and everyone else will try to guess the word in the live chat. The platform will support drop-in multiplayer, allowing users to join games in progress, live chat, and the ability to create their own rooms and word sets.
+ActItOut is an online web application that makes Charades online and accessible to anyone from anywhere. Players will act out words or phrases using live video from their device, and everyone else playing will try to guess the word through the live chat. The platform will support drop-in multiplayer, allowing users to join games in progress, live chat, and the ability to create their own rooms and word sets.
 
 ## Key Features for the Beta Version:
 
