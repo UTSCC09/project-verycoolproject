@@ -14,7 +14,7 @@ ActItOut is an online web application that makes Charades online and accessible 
 
 - Real-time video streaming and chat
 - Creating and joining single game room
-- Basic game rules and mechanics
+- Basic game rules and functionality
 - scorekeeping
 
 ## Additional Features for the Final Version:
