@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+html {
+  overflow: -moz-scrollbars-vertical;
+}
+
+body {
+  max-width: 800px;
+  height: 100vh;
+  background-image: url(/doodlebackground.png);
+  background-repeat: repeat;
+  background-color: white;
+  background-size: auto;
+  margin: auto;
+}
+
+
+.tooltip {
+  @apply invisible absolute;
+}
+
+.has-tooltip:hover .tooltip {
+  @apply visible z-50;
+}
+
+.dead-center {
+  @apply flex justify-center items-center;
+}
+
+#root {
+  height: 100%;
+}
