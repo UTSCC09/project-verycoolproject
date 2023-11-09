@@ -2,7 +2,9 @@ import React, { useCallback, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../store/User/userSlice";
-import Login from "../pages/login";
+import Login from "../pages/login/login";
+import Main from "../pages/main/main";
+import Lobby from "../pages/lobby/lobby";
 
 function App() {
     const dispatch = useDispatch();
@@ -29,11 +31,11 @@ function App() {
         <Router>
             {user.user_id ? (
                 <Routes>
-                    <Route exact path="/" element={<Login />} />
+                    <Route exact path="/" element={<Main />} />
                 </Routes>
             ) : (
                 <Routes>
-                    <Route path="/" element={<Login />} />
+                    <Route path="/" element={<Main />} />
                 </Routes>
             )}
         </Router >

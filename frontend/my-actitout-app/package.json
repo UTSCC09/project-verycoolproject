@@ -9,8 +9,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@dicebear/collection": "^7.0.1",
+    "@dicebear/core": "^7.0.1",
     "@reduxjs/toolkit": "^1.9.7",
     "axios": "^1.6.0",
+    "dompurify": "^3.0.6",
     "next": "14.0.1",
     "react": "^18",
     "react-dom": "^18",

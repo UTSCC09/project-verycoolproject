@@ -3,7 +3,7 @@ import React from "react";
 import { Provider } from "react-redux";
 import { store } from "../store";
 import App from "./App";
-import Login from "../pages/login";
+import Login from "../pages/login/login";
 
 function HomePage() {
   return (

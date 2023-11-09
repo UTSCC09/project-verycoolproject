@@ -2,7 +2,7 @@
 import React, { useState, useCallback } from "react";
 import axios from "axios";
 import { useDispatch } from "react-redux";
-import { setUser } from "../store/User/userSlice";
+import { setUser } from "../../store/User/userSlice";
 
 const Login = () => {
     const dispatch = useDispatch();
