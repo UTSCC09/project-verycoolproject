@@ -8,7 +8,7 @@ html {
 }
 
 body {
-  max-width: 800px;
+  max-width: 1000px;
   height: 100vh;
   background-image: url(/doodlebackground.png);
   background-repeat: repeat;

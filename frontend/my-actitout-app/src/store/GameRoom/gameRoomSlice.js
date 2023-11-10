@@ -22,7 +22,7 @@ const initialState = {
     timerLeft: 0,
     startEnd: {
         start: 0,
-        end: 0
+        end: 60
     }
 };
 

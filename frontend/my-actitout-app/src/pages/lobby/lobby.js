@@ -95,7 +95,7 @@ const Lobby = () => {
                                 <button
                                     disabled={!isCreator}
                                     className="block bg-green-500 hover:bg-green-600 disabled:opacity-50 w-full text-white rounded h-10"
-                                // onClick={startGame}
+                                    onClick={() => navigate(`/game`)}
                                 >
                                     Start Game
                                 </button>
@@ -136,7 +136,7 @@ const Lobby = () => {
                 <div className="mt-6 text-center">
                     <h1 className="text-4xl text-white">Invite your friends!</h1>
                 </div>
-            </div>
+            </div >
         );
     } else {
         return <></>;

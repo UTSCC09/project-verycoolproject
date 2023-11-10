@@ -5,6 +5,7 @@ import { setUser } from "../store/User/userSlice";
 import Login from "../pages/login/login";
 import Main from "../pages/main/main";
 import Lobby from "../pages/lobby/lobby";
+import Game from "../pages/game/game";
 
 function App() {
     const dispatch = useDispatch();
@@ -29,15 +30,12 @@ function App() {
 
     return (
         <Router>
-            {user.user_id ? (
-                <Routes>
-                    <Route exact path="/" element={<Main />} />
-                </Routes>
-            ) : (
-                <Routes>
-                    <Route path="/" element={<Main />} />
-                </Routes>
-            )}
+            <Routes>
+                <Route path="/" element={<Main />} />
+                <Route path="/game" element={<Game />} />
+                <Route path="/lobby" element={<Lobby />} />
+            </Routes>
+
         </Router >
     );
 }
