@@ -1,0 +1,4 @@
+.text-outline-black {
+    -webkit-text-stroke: 3.5px black;
+    text-shadow: 20px 20px 20px rgba(0, 0, 0, 0.5);
+}
