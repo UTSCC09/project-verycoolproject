@@ -1,30 +1,36 @@
-const express = require("express")
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const cors = require('cors');
+
 const app = express();
-const server = require("http").Server(app)
-const io = require("socket.io")(server)
-const { v4 } = require('uuid')
+const server = http.createServer(app);
 
-app.set('view engine', 'ejs')
-app.use('/game', express.static('public'))
 
-app.get('/game/', (req, res) => {
-    res.redirect(`/game/${v4()}`)
-})
+app.use(cors());
 
-app.get('/game/:room', (req, res) => {
-    res.render('room', {roomId: req.params.room})
-})
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:3000', // Replace with your frontend URL
+    methods: '*',
+  },
+});
 
-io.on(`connection`, socket => {
-    socket.on('join-room', (roomId, userId) => {
-        console.log("Room ID: " + roomId + " | User ID: " + userId)
-        socket.join(roomId)
-        socket.to(roomId).emit('user-connected', userId)
 
-        socket.on('disconnect', () => {
-            socket.to(roomId).emit('user-disconnected', userId)
-        })
-    })
-})
+io.on('connection', (socket) => {
+  socket.on('join-room', ({ room }) => {
+    socket.join(room);
 
-server.listen(4000, () => console.log("Server running on port 4000."))
+    socket.on('offer', (data) => {
+      socket.to(room).emit('new-peer', { signal: data });
+    });
+
+    socket.on('disconnect', () => {
+      socket.leave(room);
+    });
+  });
+});
+
+server.listen(4000, () => {
+  console.log('Server is running on port 4000');
+});

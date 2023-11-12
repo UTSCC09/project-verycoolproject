@@ -108,7 +108,7 @@ export default function Game(props) {
                     ))}
                 </div>
                 <div className="mx-4 w-4/8 h-5/6 flex-1">
-                    <VideoStream userId={userId}/>
+                    <VideoStream />
                 </div>
 
                 <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
