@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 // import WhiteBoard from "../Components/WhiteBoard";
 import { Avatar, Logo } from "../../components";
 // import Brush from "../assets/img/pen.gif";
+import { VideoStream } from "../../components/VideoStream/VideoStream"
 import { setStartEnd } from "../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -22,7 +23,7 @@ const useCounter = (endTimeStamp) => {
                 console.log("here");
                 clear();
             } else {
-                console.log(seconds);
+                //console.log(seconds);
                 setTimeLeft(seconds);
             }
         }, 1000);
@@ -107,14 +108,7 @@ export default function Game(props) {
                     ))}
                 </div>
                 <div className="mx-4 w-4/8 h-5/6 flex-1">
-                    <iframe
-                        width="100%"
-                        height="90%"
-                        src="https://www.youtube.com/embed?v=GHcyIh5V3TM"
-                        title="YouTube video player"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                    ></iframe>
+                    <VideoStream userId={userId}/>
                 </div>
 
                 <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
