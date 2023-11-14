@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createAvatar } from '@dicebear/core';
 import { adventurer } from '@dicebear/collection';
 import DOMPurify from 'dompurify'
@@ -9,6 +9,8 @@ import { useDispatch, useSelector } from "react-redux";
 import { setUser, set_username } from "../../store/User/userSlice";
 import Load from "../../../public/loading-white.gif"
 import { Logo } from "../../components"
+import { CreateRoom } from "../CreateRoom/CreateRoom"
+import { v1 } from "uuid"
 
 
 function useQuery() {
@@ -28,6 +30,7 @@ const Main = () => {
 
     const navigate = useNavigate();
     const query = useQuery();
+    const roomCodeInput = useRef(null);
 
     useEffect(() => {
         setAvatarSvg(
@@ -94,6 +97,30 @@ const Main = () => {
         }
     };
 
+    const createRoom = async () => {
+        setLoading(true);
+
+        try {
+            const roomId = v1();
+            navigate(`room/${roomId}`);
+            setLoading(false);
+        } catch (err) {
+            console.error(err);
+            setLoading(false);
+        }
+    };
+
+    const joinRoom = async () => {
+
+        try {
+            let roomCode = roomCodeInput.current.value;
+            console.log("Joining Room Code: " + roomCode);
+            navigate(`room/${roomCode}`);
+        } catch (err) {
+            console.error(err);
+        }
+    };
+
     return (
         <div className="h-full dead-center">
             {loading ? (
@@ -128,6 +155,14 @@ const Main = () => {
                                 </div>
                             </div>
 
+                            <input
+                                id="join_room_code"
+                                name="join_room_code"
+                                type="text"
+                                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                                ref={ roomCodeInput }
+                            />
+
                             <div>
                                 <button
                                     className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
@@ -140,6 +175,18 @@ const Main = () => {
                                     onClick={createGame}
                                 >
                                     Create A Game
+                                </button>
+                                <button
+                                    className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
+                                    onClick={createRoom}
+                                >
+                                    Create A Room
+                                </button>
+                                <button
+                                    className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
+                                    onClick={joinRoom}
+                                >
+                                    Join A Room
                                 </button>
                             </div>
 

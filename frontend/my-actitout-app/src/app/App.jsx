@@ -6,27 +6,10 @@ import Login from "../pages/login/login";
 import Main from "../pages/main/main";
 import Lobby from "../pages/lobby/lobby";
 import Game from "../pages/game/game";
+import CreateRoom from "../pages/CreateRoom/CreateRoom"
+import Room from "../pages/Room/Room"
 
 function App() {
-    const dispatch = useDispatch();
-    const user = useSelector((state) => state.user);
-
-    const updateUser = useCallback(() => {
-        const { username, id, user_id, access_token } = localStorage;
-
-        if (username && id && access_token) {
-            dispatch(
-                setUser({
-                    id,
-                    user_id,
-                    username,
-                    access_token,
-                })
-            );
-        }
-    }, [dispatch]);
-
-    useEffect(updateUser, []);
 
     return (
         <Router>
@@ -34,9 +17,11 @@ function App() {
                 <Route path="/" element={<Main />} />
                 <Route path="/game" element={<Game />} />
                 <Route path="/lobby" element={<Lobby />} />
+                <Route exact path="/room" element={<CreateRoom />} />
+                <Route path="/room/:roomId" element={<Room />} />
             </Routes>
-
         </Router >
+        
     );
 }
 
