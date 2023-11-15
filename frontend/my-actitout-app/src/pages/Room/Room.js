@@ -1,118 +1,126 @@
 import React, { useEffect, useRef, useState } from "react";
-import {useParams} from "react-router-dom"
+import { useParams } from "react-router-dom";
 import io from "socket.io-client";
-import Peer from "simple-peer";
+import { Peer } from "peerjs";
 import styled from "styled-components";
 
 const Container = styled.div`
     padding: 20px;
     display: flex;
+    flex-direction: column;
+    align-items: center;
     height: 100vh;
-    width: 90%;
-    margin: auto;
-    flex-wrap: wrap;
+    width: 100%;
 `;
 
-const StyledVideo = styled.video`
-    height: 40%;
-    width: 50%;
+const VideoGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
 `;
 
-const Video = (props) => {
-    const ref = useRef();
+const RoomCodeSection = styled.div`
+    background-color: #3498db;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+`;
 
-    useEffect(() => {
-        props.peer.on("stream", stream => {
-            ref.current.srcObject = stream;
-        })
-    }, []);
+const ConnectButton = styled.button`
+    padding: 10px 20px;
+    font-size: 18px;
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 
-    return (
-        <StyledVideo playsInline autoPlay ref={ref} />
-    );
-}
+    &:hover {
+        background-color: #2980b9;
+    }
+`;
 
 const Room = (props) => {
+    const [showButton, setShowButton] = useState(true);
     const [peers, setPeers] = useState([]);
     const socketRef = useRef();
-    const userVideo = useRef();
+    const myVideo = useRef();
+    const videoGrid = useRef(null);
     const peersRef = useRef([]);
-    const {roomId} = useParams();
+    const { roomId } = useParams();
+    const myPeer = useRef();
+    const connectToRoomBtn = useRef();
 
-    useEffect(() => {
-        socketRef.current = io.connect('http://localhost:4000');
-        navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then(stream => {
-            userVideo.current.srcObject = stream;
-            console.log("RoomId: " + roomId)
-            socketRef.current.emit("join room", roomId);
-            socketRef.current.on("all users", users => {
-                const peers = [];
-                users.forEach(userID => {
-                    const peer = createPeer(userID, socketRef.current.id, stream);
-                    peersRef.current.push({
-                        peerID: userID,
-                        peer,
-                    })
-                    peers.push(peer);
-                })
-                setPeers(peers);
-            })
+    function addVideoStream(video, stream) {
+        video.srcObject = stream;
+        video.addEventListener('loadedmetadata', () => {
+            video.play();
+        });
+        videoGrid.current.appendChild(video);
+    }
 
-            socketRef.current.on("user joined", payload => {
-                const peer = addPeer(payload.signal, payload.callerID, stream);
-                peersRef.current.push({
-                    peerID: payload.callerID,
-                    peer,
-                })
+    function connectToNewUser(userId, stream) {
+        const call = myPeer.current.call(userId, stream);
+        const video = document.createElement('video');
+        call.on('stream', userVideoStream => {
+            addVideoStream(video, userVideoStream);
+        });
+        call.on('close', () => {
+            video.remove();
+        });
+        peers[userId] = call;
+    }
 
-                setPeers(users => [...users, peer]);
-            });
+    const handleConnectToRoom = async () => {
+        setShowButton(false);
 
-            socketRef.current.on("receiving returned signal", payload => {
-                const item = peersRef.current.find(p => p.peerID === payload.id);
-                item.peer.signal(payload.signal);
-            });
-        })
-    }, []);
-
-    function createPeer(userToSignal, callerID, stream) {
-        const peer = new Peer({
-            initiator: true,
-            trickle: false,
-            stream,
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
         });
 
-        peer.on("signal", signal => {
-            socketRef.current.emit("sending signal", { userToSignal, callerID, signal })
-        })
+        myVideo.current = document.createElement('video');
+        addVideoStream(myVideo.current, stream);
 
-        return peer;
-    }
+        myPeer.current = new Peer();
+        myPeer.current.on('call', call => {
+            call.answer(stream);
+            const video = document.createElement('video');
+            call.on('stream', userVideoStream => {
+                addVideoStream(video, userVideoStream);
+            });
+        });
 
-    function addPeer(incomingSignal, callerID, stream) {
-        const peer = new Peer({
-            initiator: false,
-            trickle: false,
-            stream,
-        })
+        socketRef.current = io.connect('http://localhost:4000');
+        socketRef.current.on('user-connected', userId => {
+            connectToNewUser(userId, stream);
+        });
 
-        peer.on("signal", signal => {
-            socketRef.current.emit("returning signal", { signal, callerID })
-        })
+        socketRef.current.on('user-disconnected', userId => {
+            if (peers[userId]) {
+                peers[userId].close();
+                delete peers[userId];
+            }
+        });
 
-        peer.signal(incomingSignal);
-
-        return peer;
-    }
+        myPeer.current.on('open', id => {
+            socketRef.current.emit('join-room', roomId, id);
+        });
+    };
 
     return (
         <Container>
-            <StyledVideo muted ref={userVideo} autoPlay playsInline />
-            {peers.map((peer, index) => {
-                return (
-                    <Video key={index} peer={peer} />
-                );
-            })}
+            <RoomCodeSection>
+                <h2 style={{ color: "#fff" }}>Room Code: <strong>{roomId}</strong></h2>
+            </RoomCodeSection>
+            {showButton && (
+                <ConnectButton ref={connectToRoomBtn} onClick={handleConnectToRoom}>
+                    Connect To Room
+                </ConnectButton>
+            )}
+            <VideoGrid ref={videoGrid}></VideoGrid>
         </Container>
     );
 };
