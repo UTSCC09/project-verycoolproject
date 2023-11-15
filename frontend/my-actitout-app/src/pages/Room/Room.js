@@ -42,6 +42,7 @@ const ConnectButton = styled.button`
     }
 `;
 
+// For some reason room is rendered twice so connections and id get overwritten(?)
 const Room = (props) => {
     const [showButton, setShowButton] = useState(true);
     const [peers, setPeers] = useState([]);
@@ -73,6 +74,7 @@ const Room = (props) => {
         peers[userId] = call;
     }
 
+    // Solution: Set up connections after pushing a button so they won't be overwritten
     const handleConnectToRoom = async () => {
         setShowButton(false);
 
