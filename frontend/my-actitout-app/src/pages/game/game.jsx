@@ -6,7 +6,9 @@ import { Avatar, Logo } from "../../components";
 import { VideoStream } from "../../components/VideoStream/VideoStream"
 import { setStartEnd } from "../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { io } from 'socket.io-client';
 
+const socket = io('http://localhost:4000')
 const currentDate = new Date();
 currentDate.setSeconds(currentDate.getSeconds() + 60);
 
@@ -50,9 +52,23 @@ export default function Game(props) {
     const dispatch = useDispatch();
 
     const sendMessage = () => {
-        console.log('sednd msg to socket');
+        socket.emit("message", message);
         setMessage("");
     };
+
+    useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
+        socket.on("new_message", (data) => {
+            console.log(data);
+            let div = document.createElement("div");
+            div.className = getMessageColor(data._type);
+            div.innerHTML = data;
+            document.getElementById("messages").appendChild(div);
+        })
+
+        return () => {
+            socket.off("new_message");
+        };
+    }, []);
 
     useEffect(() => {
         dispatch(setStartEnd({ start: 0, end: 60 }));
@@ -112,24 +128,24 @@ export default function Game(props) {
                 </div>
 
                 <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
-                    <div className="flex-1 flex flex-col justify-end overflow-auto">
-                        <div key={"gello"}>
+                    <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">
+                        {/* <div key={"gello"}>
                             lord: hello
                         </div>
                         {game.messages.map((msg) => (
                             <div className={getMessageColor(msg._type)} key={msg.message}>
                                 {msg._type === "normal" ? `${msg.username}: ` : ""} {msg.message}
                             </div>
-                        ))}
+                        ))} */}
                     </div>
                     <input
                         className="w-full border border-gray rounded px-2 mb-2"
                         placeholder="Type your guess here..."
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        onKeyPress={(e) => {
+                        onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                                sendMessage();
+                                if(message !== "") sendMessage();
                             }
                         }}
                     />
