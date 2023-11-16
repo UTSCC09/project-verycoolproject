@@ -23,7 +23,15 @@ io.on(`connection`, socket => {
 
         socket.on('disconnect', () => {
             socket.to(roomId).emit('user-disconnected', userId)
+            console.log('disconnected')
         })
+    })
+
+         // Listening for a message event 
+    socket.on('message', (data) => {
+        console.log(data)
+        io.emit('new_message', `${socket.id.substring(0, 5)}: ${data}`)
+        console.log('message sent')
     })
 })
 //server.listen(process.env.PORT || 4000, () => console.log('server is running on port 4000'));
