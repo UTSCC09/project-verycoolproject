@@ -4,7 +4,9 @@ import io from 'socket.io-client';
 
 const socket = io('http://localhost:4000');
 
-export function VideoStream() {
+export function VideoStream(props) {
+
+  const { roomId } = props;
   const [peers, setPeers] = useState(null);
   const videoRef = useRef(null);
   const userStreamRef = useRef(null);
@@ -45,7 +47,7 @@ export function VideoStream() {
       setPeers((prevPeers) => [...prevPeers, newPeer]);
     });
 
-    socket.emit('join-room', { room: 'room' }); // Replace with your room ID
+    socket.emit('join-room', roomId); // Replace with your room ID
 
     return () => {
       peer.destroy();

@@ -2,10 +2,12 @@
 
 import axios from "axios";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
+import { useRouter } from 'next/navigation';
 import { Avatar, Inputs } from "../../components";
 import Load from "../../../public/loading-white.gif"
 import { useDispatch, useSelector } from "react-redux";
+
+import { selectGameState, selectUserState } from '../../selectors/useSelector';
 
 
 import {
@@ -30,13 +32,10 @@ import { set_id } from "../../store/User/userSlice";
 const Lobby = () => {
 
     const dispatch = useDispatch();
-    const { user, game } = useSelector((state) => ({
-        user: state.user,
-        game: state.game
-    }));
-    const { gameId } = useParams();
-    const navigate = useNavigate();
-    const location = useLocation();
+    const user = useSelector(selectUserState);
+    const game = useSelector(selectGameState);
+
+    const { push } = useRouter();
     const [loading, setLoading] = useState(true);
 
 
@@ -95,7 +94,7 @@ const Lobby = () => {
                                 <button
                                     disabled={!isCreator}
                                     className="block bg-green-500 hover:bg-green-600 disabled:opacity-50 w-full text-white rounded h-10"
-                                    onClick={() => navigate(`/game`)}
+                                    onClick={() => push(`/game`)}
                                 >
                                     Start Game
                                 </button>

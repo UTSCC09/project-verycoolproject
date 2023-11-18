@@ -2,12 +2,12 @@ import React, { useCallback, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../store/User/userSlice";
-import Login from "../pages/login/login";
-import Main from "../pages/main/main";
-import Lobby from "../pages/lobby/lobby";
-import Game from "../pages/game/game";
-import CreateRoom from "../pages/CreateRoom/CreateRoom"
-import Room from "../pages/Room/Room"
+import Login from "./login/page";
+import Main from "./main/page";
+import Lobby from "./lobby/page";
+import Game from "./game/[id]/page";
+import CreateRoom from "./CreateRoom/page"
+import Room from "./room/page"
 
 function App() {
 
@@ -21,7 +21,7 @@ function App() {
                 <Route path="/room/:roomId" element={<Room />} />
             </Routes>
         </Router >
-        
+
     );
 }
 

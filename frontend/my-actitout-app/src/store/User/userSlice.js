@@ -1,9 +1,10 @@
+"use client"
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     id: '',
     user_id: '',
-    username: '',
+    username: 'lord',
     access_token: '',
 };
 
@@ -29,7 +30,7 @@ const userSlice = createSlice({
             localStorage.setItem('id', id);
             localStorage.setItem('user_id', user_id);
             localStorage.setItem('username', username);
-            localStorage.setItem('username', email);
+            localStorage.setItem('email', email);
             localStorage.setItem('access_token', access_token);
         },
         set_id: setLocalStorageValue('id'),
@@ -42,5 +43,5 @@ const userSlice = createSlice({
 
 export const { setUser, set_id, set_userid, set_username, set_accessToken } = userSlice.actions;
 
-export const selectUserState = (RootState) => RootState.user
+// export const selectUserState = (RootState) => RootState.user
 export default userSlice.reducer;

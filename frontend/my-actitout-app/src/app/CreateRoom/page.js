@@ -1,12 +1,13 @@
-import {React} from "react";
+import { React } from "react";
 import { v1 as uuid } from "uuid";
-import { useNavigate } from "react-router-dom";
+import { useRouter } from 'next/navigation';
+
 
 const CreateRoom = (props) => {
-    let navigator = useNavigate();
+    const { push } = useRouter();
     function create() {
         const id = uuid();
-        navigator(`/room/${id}`);
+        push(`/room/${id}`);
     }
 
     return (

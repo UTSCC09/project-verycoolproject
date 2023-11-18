@@ -88,6 +88,6 @@ export const {
     showGame
 } = gameRoomSlice.actions;
 
-export const selectGameState = (RootState) => RootState.game;
+// export const selectGameState = (RootState) => RootState.game;
 
 export default gameRoomSlice.reducer;

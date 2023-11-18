@@ -1,11 +1,13 @@
+"use client"
 import React, { useEffect, useState } from "react";
 
 // import WhiteBoard from "../Components/WhiteBoard";
-import { Avatar, Logo } from "../../components";
+import { Avatar, Logo } from "../../../components";
 // import Brush from "../assets/img/pen.gif";
-import { VideoStream } from "../../components/VideoStream/VideoStream"
-import { setStartEnd } from "../../store/GameRoom/gameRoomSlice";
+import { VideoStream } from "../../../components/VideoStream/VideoStream"
+import { setStartEnd } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
+import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import { io } from 'socket.io-client';
 
 const socket = io('http://localhost:4000')
@@ -43,20 +45,28 @@ const useCounter = (endTimeStamp) => {
 };
 
 
-export default function Game(props) {
-    // const { gameId, user } = props;
-    const game = useSelector((state) => state.game);
-    const user = useSelector((state) => state.user);
+export default function Page(params) {
+
+
+    const { id } = params.params;
+
+
+
+    const user = useSelector(selectUserState);
+    const game = useSelector(selectGameState);
 
     const [message, setMessage] = useState("");
     const dispatch = useDispatch();
 
     const sendMessage = () => {
-        socket.emit("message", message);
+        socket.emit('message', { message: message, roomId: id });
+        // socket.emit("message", message);
         setMessage("");
     };
 
     useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
+        socket.emit('join-room', id);
+
         socket.on("new_message", (data) => {
             console.log(data);
             let div = document.createElement("div");
@@ -124,7 +134,7 @@ export default function Game(props) {
                     ))}
                 </div>
                 <div className="mx-4 w-4/8 h-5/6 flex-1">
-                    <VideoStream />
+                    <VideoStream roomId={id} />
                 </div>
 
                 <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
@@ -145,7 +155,7 @@ export default function Game(props) {
                         onChange={(e) => setMessage(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === "Enter") {
-                                if(message !== "") sendMessage();
+                                if (message !== "") sendMessage();
                             }
                         }}
                     />
