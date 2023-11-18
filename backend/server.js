@@ -16,23 +16,29 @@ const users = {};
 const socketToRoom = {};
 
 io.on(`connection`, socket => {
-    socket.on('join-room', (roomId, userId) => {
-        console.log("Room ID: " + roomId + " | User ID: " + userId)
-        socket.join(roomId)
-        socket.to(roomId).emit('user-connected', userId)
+  socket.on('join-room', (roomId, userId) => {
+    
+    console.log(roomId)
+    console.log("Room ID: " + roomId + " | User ID: " + userId)
+    socket.join(roomId)
+    socket.to(roomId).emit('user-connected', userId)
 
-        socket.on('disconnect', () => {
-            socket.to(roomId).emit('user-disconnected', userId)
-            console.log('disconnected')
-        })
+    socket.on('disconnect', () => {
+      socket.to(roomId).emit('user-disconnected', userId)
+      console.log('disconnected')
     })
+  })
 
-         // Listening for a message event 
-    socket.on('message', (data) => {
-        console.log(data)
-        io.emit('new_message', `${socket.id.substring(0, 5)}: ${data}`)
-        console.log('message sent')
-    })
+  // Listening for a message event 
+  socket.on('message', (data) => {
+    const { message, roomId } = data
+    console.log(message)
+    console.log(roomId)
+
+    io.to(roomId).emit('new_message', `${socket.id.substring(0, 5)}: ${message}`);
+    console.log(socket.id)
+    console.log('message sent')
+  })
 })
 //server.listen(process.env.PORT || 4000, () => console.log('server is running on port 4000'));
 server.listen(4000, () => console.log('server is running on port 4000'));
