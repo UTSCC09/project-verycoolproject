@@ -1,12 +1,12 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const Player = {
-    id: '1',
-    username: 'lord',
-    score: undefined,
-    rank: undefined,
-    correct: undefined
-};
+// const Player = {
+//     id: '1',
+//     username: 'lordtest',
+//     score: undefined,
+//     rank: undefined,
+//     correct: undefined
+// };
 
 const initialState = {
     screen: "lobby",
@@ -14,10 +14,10 @@ const initialState = {
     curr_round: 1,
     actTime: 80,
     customWords: [],
-    players: [Player],
+    players: [],
     messages: [],
     admin: '',
-    turn: Player,
+    turn: '',
     word: '',
     timerLeft: 0,
     startEnd: {
@@ -27,6 +27,8 @@ const initialState = {
 };
 
 const setField = (stateKey) => (state, action) => {
+    console.log(action.payload)
+    console.log(stateKey)
     state[stateKey] = action.payload;
 };
 
@@ -52,6 +54,7 @@ export const gameRoomSlice = createSlice({
         setadmin: setField('admin'),
         setTurn: setField('turn'),
         setWord: setField('word'),
+        setAllPlayers: setField('players'),
         addPlayer: (state, action) => {
             state.players.push(action.payload);
         },
@@ -84,6 +87,7 @@ export const {
     setCustomWords,
     addPlayer,
     removePlayer,
+    setAllPlayers,
     showLobby,
     showGame
 } = gameRoomSlice.actions;

@@ -1,9 +1,18 @@
 const express = require("express");
+
+require("dotenv").config();
 const http = require("http");
 const app = express();
+
 const server = http.createServer(app);
 const socket = require("socket.io");
 const cors = require('cors');
+const connectToMongoDB = require("./mongodb/setup")
+
+const { UserRoutes, RoomRoutes } = require('./router')
+
+const User = require("./models/User");
+const Room = require("./models/Rooms");
 
 const io = require('socket.io')(server, {
   cors: {
@@ -15,9 +24,27 @@ const io = require('socket.io')(server, {
 const users = {};
 const socketToRoom = {};
 
+
+connectToMongoDB()
+
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+  })
+);
+
+
+
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
+
+app.use("/room", RoomRoutes);
+app.use("/user", UserRoutes);
+
 io.on(`connection`, socket => {
   socket.on('join-room', (roomId, userId) => {
-    
+
     console.log(roomId)
     console.log("Room ID: " + roomId + " | User ID: " + userId)
     socket.join(roomId)
@@ -40,5 +67,5 @@ io.on(`connection`, socket => {
     console.log('message sent')
   })
 })
-//server.listen(process.env.PORT || 4000, () => console.log('server is running on port 4000'));
-server.listen(4000, () => console.log('server is running on port 4000'));
+
+server.listen(process.env.PORT || 4000, () => console.log('server is running on port 4000'));

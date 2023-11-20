@@ -7,11 +7,12 @@ import { useRouter } from 'next/navigation';
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { selectProperty } from '../selectors/useSelector';
-import { setUser, set_username } from "../store/User/userSlice";
+import { setUser, set_username, set_userid } from "../store/User/userSlice";
 import Load from "../../public/loading-white.gif"
 import { Logo } from "../components/"
 import { v1 } from "uuid"
 
+import { getRandomRoom, createRoom, createUser, addPlayerToRoom } from "../api/api.mjs"
 
 
 const Main = () => {
@@ -36,55 +37,90 @@ const Main = () => {
 
   const playGame = async (event) => {
     event.preventDefault();
-
-    //  randomly finds a room from database and redirect to /lobby/roomid
-    //else redorects to creat a new game room
     setLoading(true);
-    push('/game');
+
+    try {
+      //  randomly finds a room from database and redirect to /lobby/roomid
+      const roomData = await getRandomRoom();
+
+      // Check if the room exists
+      if (roomData.roomExists) {
+        // Redirect to the existing room
+        console.log("add user to existing room")
+        const { roomId, screen } = roomData;
+
+        const userId = await createUser(username);
+
+        addPlayerToRoom(roomId, userId)
+          .then(() => {
+            if (screen === "lobby") {
+              push(`lobby/${roomId}`);
+            }
+            else {
+              push(`game/${roomId}`);
+            }
+          })
+          .catch((error) => {
+            // Your code to handle any errors that occurred during the addition
+            console.error(error);
+          });
+
+      }
+      else {
+        console.log("no room exist")
+
+        // Create a new room  and make new user in db and then redirect to the newly created room
+        const userId = await createUser(username);
+        console.log(userId)
+        dispatch(set_userid(userId))
+
+        //create a room with owner id
+        const roomData = await createRoom(userId);
+        const { id } = roomData
+        push(`lobby/${id}`);
+
+
+      }
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+    }
+
   };
 
   const createGame = async (event) => {
     event.preventDefault();
     setLoading(true);
-
     try {
-      // const res = await axios.post(
-      //     `${backend_path}/game/create`,
-      //     {
-      //         username,
-      //     },
-      //     {
-      //         headers: {
-      //             Authorization: user.access_token,
-      //         },
-      //     }
-      // );
+      const userId = await createUser(username);
+      console.log(userId)
+      dispatch(set_userid(userId))
 
-      // const data = res.data;
-
-      // console.log(res);
-      console.log("here");
-      push(`lobby`);
+      //create a room wiht owner id
+      const roomData = await createRoom(userId);
+      const { id } = roomData
       setLoading(false);
+      push(`lobby/${id}`);
+
     } catch (err) {
       console.error(err);
       setLoading(false);
     }
   };
 
-  const createRoom = async (event) => {
-    event.preventDefault();
-    setLoading(true);
+  // const createRoom = async (event) => {
+  //   event.preventDefault();
+  //   setLoading(true);
 
-    try {
-      const roomId = v1();
-      push(`room/${roomId}`);
-      setLoading(false);
-    } catch (err) {
-      console.error(err);
-      setLoading(false);
-    }
-  };
+  //   try {
+  //     const roomId = v1();
+  //     push(`room/${roomId}`);
+  //     setLoading(false);
+  //   } catch (err) {
+  //     console.error(err);
+  //     setLoading(false);
+  //   }
+  // };
 
   const joinRoom = async (event) => {
     event.preventDefault();

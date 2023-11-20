@@ -1,3 +1,4 @@
+"use client"
 import React, { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import io from "socket.io-client";
@@ -43,14 +44,16 @@ const ConnectButton = styled.button`
 `;
 
 // For some reason room is rendered twice so connections and id get overwritten(?)
-const Room = (props) => {
+const Room = (params) => {
+
+    const { roomId } = params.params;
+
     const [showButton, setShowButton] = useState(true);
     const [peers, setPeers] = useState([]);
     const socketRef = useRef();
     const myVideo = useRef();
     const videoGrid = useRef(null);
     const peersRef = useRef([]);
-    const { roomId } = useParams();
     const myPeer = useRef();
     const connectToRoomBtn = useRef();
 
