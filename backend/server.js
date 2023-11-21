@@ -1,36 +1,71 @@
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const cors = require('cors');
+const express = require("express");
 
+require("dotenv").config();
+const http = require("http");
 const app = express();
+
 const server = http.createServer(app);
+const socket = require("socket.io");
+const cors = require('cors');
+const connectToMongoDB = require("./mongodb/setup")
 
+const { UserRoutes, RoomRoutes } = require('./router')
 
-app.use(cors());
+const User = require("./models/User");
+const Room = require("./models/Rooms");
 
-const io = new Server(server, {
+const io = require('socket.io')(server, {
   cors: {
-    origin: 'http://localhost:3000', // Replace with your frontend URL
-    methods: '*',
-  },
-});
+    origin: "http://localhost:3000",
+    methods: "*"
+  }
+})
+
+const users = {};
+const socketToRoom = {};
 
 
-io.on('connection', (socket) => {
-  socket.on('join-room', ({ room }) => {
-    socket.join(room);
+connectToMongoDB()
 
-    socket.on('offer', (data) => {
-      socket.to(room).emit('new-peer', { signal: data });
-    });
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+  })
+);
+
+
+
+app.use(express.urlencoded({ extended: false }));
+app.use(express.json());
+
+
+app.use("/room", RoomRoutes);
+app.use("/user", UserRoutes);
+
+io.on(`connection`, socket => {
+  socket.on('join-room', (roomId, userId) => {
+
+    console.log(roomId)
+    console.log("Room ID: " + roomId + " | User ID: " + userId)
+    socket.join(roomId)
+    socket.to(roomId).emit('user-connected', userId)
 
     socket.on('disconnect', () => {
-      socket.leave(room);
-    });
-  });
-});
+      socket.to(roomId).emit('user-disconnected', userId)
+      console.log('disconnected')
+    })
+  })
 
-server.listen(4000, () => {
-  console.log('Server is running on port 4000');
-});
+  // Listening for a message event 
+  socket.on('message', (data) => {
+    const { message, roomId } = data
+    console.log(message)
+    console.log(roomId)
+
+    io.to(roomId).emit('new_message', `${socket.id.substring(0, 5)}: ${message}`);
+    console.log(socket.id)
+    console.log('message sent')
+  })
+})
+
+server.listen(process.env.PORT || 4000, () => console.log('server is running on port 4000'));

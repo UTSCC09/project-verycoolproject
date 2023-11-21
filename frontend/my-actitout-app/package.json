@@ -16,7 +16,9 @@
     "dompurify": "^3.0.6",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
+    "isomorphic-dompurify": "^1.9.0",
     "next": "14.0.1",
+    "peerjs": "^1.5.1",
     "react": "^18",
     "react-bootstrap": "^2.9.1",
     "react-dom": "^18",
@@ -25,6 +27,7 @@
     "simple-peer": "^9.11.1",
     "socket.io": "^4.7.2",
     "socket.io-client": "^4.7.2",
+    "styled-components": "^6.1.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

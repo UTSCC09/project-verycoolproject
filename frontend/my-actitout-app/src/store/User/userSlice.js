@@ -1,10 +1,12 @@
+"use client"
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     id: '',
-    user_id: '',
-    username: '',
-    access_token: '',
+    username: 'lord',
+    score: 0,
+    rank: 0,
+    correct: 0
 };
 
 // Create a function for other actions
@@ -19,28 +21,30 @@ const userSlice = createSlice({
     initialState,
     reducers: {
         setUser: (state, action) => {
-            const { id, user_id, username, access_token, email } = action.payload;
+            const { id, username, score, rank, correct } = action.payload;
             state.id = id;
-            state.user_id = user_id;
             state.username = username;
-            state.access_token = access_token;
+            state.score = score;
+            state.rank = rank;
+            state.correct = correct;
 
             // Store user data in localStorage
             localStorage.setItem('id', id);
-            localStorage.setItem('user_id', user_id);
             localStorage.setItem('username', username);
-            localStorage.setItem('username', email);
-            localStorage.setItem('access_token', access_token);
+            localStorage.setItem('score', score);
+            localStorage.setItem('rank', rank);
+            localStorage.setItem('correct', correct);
+
         },
-        set_id: setLocalStorageValue('id'),
-        set_userid: setLocalStorageValue('user_id'),
+        set_userid: setLocalStorageValue('id'),
         set_username: setLocalStorageValue('username'),
-        set_email: setLocalStorageValue('email'),
-        set_accessToken: setLocalStorageValue('access_token'),
+        set_score: setLocalStorageValue('score'),
+        set_rank: setLocalStorageValue('rank'),
+        set_correct: setLocalStorageValue('correct'),
     },
 });
 
-export const { setUser, set_id, set_userid, set_username, set_accessToken } = userSlice.actions;
+export const { setUser, set_userid, set_username, set_score, set_rank, set_correct } = userSlice.actions;
 
-export const selectUserState = (RootState) => RootState.user
+// export const selectUserState = (RootState) => RootState.user
 export default userSlice.reducer;

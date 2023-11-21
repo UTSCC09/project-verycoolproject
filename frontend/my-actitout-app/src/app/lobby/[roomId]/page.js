@@ -2,10 +2,12 @@
 
 import axios from "axios";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { Link, useNavigate, useLocation, useParams } from "react-router-dom";
-import { Avatar, Inputs } from "../../components";
-import Load from "../../../public/loading-white.gif"
+import { useRouter } from 'next/navigation';
+import { Avatar, Inputs } from "../../../components";
+import Load from "../../../../public/loading-white.gif"
 import { useDispatch, useSelector } from "react-redux";
+
+import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 
 
 import {
@@ -20,25 +22,66 @@ import {
     setRounds,
     setactTime,
     setCustomWords,
+    setAllPlayers,
     addPlayer,
     removePlayer,
     showLobby,
     showGame
-} from "../../store/GameRoom/gameRoomSlice";
-import { set_id } from "../../store/User/userSlice";
+} from "../../../store/GameRoom/gameRoomSlice";
+import { set_id } from "../../../store/User/userSlice";
 
-const Lobby = () => {
+import { addPlayerToRoom, getRoomById, get_players } from "../../../api/api.mjs"
+
+const Lobby = (params) => {
+
+    const { roomId } = params.params;
 
     const dispatch = useDispatch();
-    const { user, game } = useSelector((state) => ({
-        user: state.user,
-        game: state.game
-    }));
-    const { gameId } = useParams();
-    const navigate = useNavigate();
-    const location = useLocation();
+    const user = useSelector(selectUserState);
+    const game = useSelector((state) => state.game);
+
+    const { push } = useRouter();
     const [loading, setLoading] = useState(true);
 
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Make API call to get game data
+                const gameData = await getRoomById(roomId);
+                const { screen } = gameData;
+
+                const { players } = await get_players(roomId);
+
+                // Dispatch action to update game state in Redux
+                dispatch(setAllPlayers(players));
+                // dispatch(setRound(4));
+
+                // console.log(game);
+                // Set loading to false when data is fetched
+                setLoading(false);
+            } catch (error) {
+                console.error('Error fetching game data:', error);
+            }
+        };
+
+        // Call fetchData when the component mounts
+        fetchData();
+    }, [dispatch, roomId]);
+
+
+    // add code to add user image on socket info
+    // useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
+    //     socket.emit('join-room', id);
+
+    //     socket.on("new_user", (data) => {
+    //         console.log(data);
+    //         smthhhhhh
+    //     })
+
+    //     return () => {
+    //         socket.off("new_message");
+    //     };
+    // }, []);
 
     const isCreator = useMemo(() => {
         // return game.creator === user.id;
@@ -95,7 +138,7 @@ const Lobby = () => {
                                 <button
                                     disabled={!isCreator}
                                     className="block bg-green-500 hover:bg-green-600 disabled:opacity-50 w-full text-white rounded h-10"
-                                    onClick={() => navigate(`/game`)}
+                                    onClick={() => push(`/game/${roomId}`)}
                                 >
                                     Start Game
                                 </button>
@@ -122,12 +165,12 @@ const Lobby = () => {
                                     <div className="mt-2 sm:text-sm md:text-xl">
                                         {player.username}
                                     </div>
-                                    {player.id === user.id && (
+                                    {/* {player.id === user.id && (
                                         <div className="text-yellow-300">You</div>
                                     )}
                                     {player.id === game.creator && (
                                         <div className="text-yellow-300">Admin</div>
-                                    )}
+                                    )} */}
                                 </div>
                             ))}
                         </div>
