@@ -13,6 +13,7 @@ const { UserRoutes, RoomRoutes } = require('./router')
 
 const User = require("./models/User");
 const Room = require("./models/Rooms");
+const words = require('./words');
 
 const io = require('socket.io')(server, {
   cors: {
@@ -45,7 +46,6 @@ app.use("/user", UserRoutes);
 io.on(`connection`, socket => {
   socket.on('join-room', (roomId, userId) => {
 
-    console.log(roomId)
     console.log("Room ID: " + roomId + " | User ID: " + userId)
     socket.join(roomId)
     socket.to(roomId).emit('user-connected', userId)
@@ -65,6 +65,13 @@ io.on(`connection`, socket => {
     io.to(roomId).emit('new_message', `${socket.id.substring(0, 5)}: ${message}`);
     console.log(socket.id)
     console.log('message sent')
+  })
+
+  socket.on('new-round', (data) => {
+    const { roomId } = data
+    console.log('new round')
+    io.to(roomId).emit('new_word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+    console.log('new word sent')
   })
 })
 

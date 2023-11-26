@@ -138,6 +138,26 @@ const addPlayerToRoom = async (req, res) => {
     }
 };
 
+//Endpoint to retrieve all player usernames in a room
+const getRoundData = async (req, res) => {
+    try {
+        const { roomId } = req.body;
+
+        // Find the room by ID
+        const room = await Room.findById(roomId, 'num_correct players ');
+
+        if (!room) {
+            return res.status(404).json({ error: 'Room not found' });
+        }
+
+        res.json({ players: playerDetails })
+    } catch (error) {
+        console.error('Error retrieving players:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+
+};
+
 
 
 

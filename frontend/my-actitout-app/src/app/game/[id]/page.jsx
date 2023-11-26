@@ -56,10 +56,13 @@ export default function Page(params) {
     const game = useSelector(selectGameState);
 
     const [message, setMessage] = useState("");
+    const [answer, setAnswer] = useState("");
     const dispatch = useDispatch();
 
     const sendMessage = () => {
+        if(message === answer) {console.log('correct')}
         socket.emit('message', { message: message, roomId: id });
+        socket.emit('new-round', { message: message, roomId: id });
         // socket.emit("message", message);
         setMessage("");
     };
@@ -75,8 +78,14 @@ export default function Page(params) {
             document.getElementById("messages").appendChild(div);
         })
 
+        socket.on("new_word", (data) => {
+            console.log(data);
+            setAnswer(data);
+        })
+
         return () => {
             socket.off("new_message");
+            socket.off("new_word");
         };
     }, []);
 

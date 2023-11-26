@@ -31,7 +31,9 @@ import {
 import { set_id } from "../../../store/User/userSlice";
 
 import { addPlayerToRoom, getRoomById, get_players } from "../../../api/api.mjs"
+import { io } from 'socket.io-client';
 
+const socket = io('http://localhost:4000')
 const Lobby = (params) => {
 
     const { roomId } = params.params;
@@ -67,6 +69,11 @@ const Lobby = (params) => {
         // Call fetchData when the component mounts
         fetchData();
     }, [dispatch, roomId]);
+
+    function startGame() {
+        push(`/game/${roomId}`)
+    }
+
 
 
     // add code to add user image on socket info
@@ -138,7 +145,7 @@ const Lobby = (params) => {
                                 <button
                                     disabled={!isCreator}
                                     className="block bg-green-500 hover:bg-green-600 disabled:opacity-50 w-full text-white rounded h-10"
-                                    onClick={() => push(`/game/${roomId}`)}
+                                    onClick={() => startGame()}
                                 >
                                     Start Game
                                 </button>
