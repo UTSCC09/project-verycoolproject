@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 // import WhiteBoard from "../Components/WhiteBoard";
 import { Avatar, Logo } from "../../../components";
@@ -9,6 +9,7 @@ import { setStartEnd } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import { io } from 'socket.io-client';
+import { Peer } from "peerjs"
 
 const socket = io('http://localhost:4000')
 const currentDate = new Date();
@@ -48,28 +49,108 @@ const useCounter = (endTimeStamp) => {
 export default function Page(params) {
 
 
-    const { id } = params.params;
-
-
+    const { roomId } = params.params;
 
     const user = useSelector(selectUserState);
     const game = useSelector(selectGameState);
+
+    const [peers, setPeers] = useState([]);
+    const [streams, setStreams] = useState([]);
+    const myVideo = useRef();
+    const videoGrid = useRef(null);
+    const peersRef = useRef([]);
+    const myPeer = useRef();
 
     const [message, setMessage] = useState("");
     const [answer, setAnswer] = useState("");
     const dispatch = useDispatch();
 
+    let currentPlayerId = null; // This will control who's video is being played
+
     const sendMessage = () => {
         if(message === answer) {console.log('correct')}
-        socket.emit('message', { message: message, roomId: id });
-        socket.emit('new-round', { message: message, roomId: id });
+        socket.emit('message', { message: message, roomId: roomId });
+        socket.emit('new-round', { message: message, roomId: roomId });
         // socket.emit("message", message);
         setMessage("");
     };
 
-    useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
-        socket.emit('join-room', id);
+    function addVideoStream(video, stream) {
+        video.srcObject = stream;
+        video.addEventListener('loadedmetadata', () => {
+            video.play();
+        });
+    }
 
+    function connectToNewUser(userId, stream) {
+        const call = myPeer.current.call(userId, stream);
+        const video = document.createElement('video');
+        call.on('stream', userVideoStream => {
+            addVideoStream(video, userVideoStream);
+            streams[userId] = userVideoStream;
+            console.log("Set stream of: " + userId + " to " + streams[userId])
+        });
+        call.on('close', () => {
+            video.remove();
+        });
+        peers[userId] = call;
+    }
+
+    function switchVideo(userId){
+        if (videoGrid.current){
+            const video = document.createElement('video');
+            addVideoStream(video, streams[userId]);
+            videoGrid.current.innerHTML = "";
+            videoGrid.current.appendChild(video);
+            console.log("Playing stream of: " + userId + " | " + streams[userId])
+        }
+    }
+
+    const setupPeers = async () => {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false
+        });
+
+        myVideo.current = document.createElement('video');
+
+        myPeer.current = new Peer(user.id); //user.id not initialized??
+
+        myPeer.current.on('open', id => {
+            socket.emit('join-room', roomId, id);
+            addVideoStream(myVideo.current, stream);
+            streams[myPeer.current.id] = stream;
+            console.log("Set stream of: " + myPeer.current.id + " to " + streams[myPeer.current.id])
+            myPeer.current.on('call', call => {
+                call.answer(stream);
+                const video = document.createElement('video');
+                call.on('stream', userVideoStream => {
+                    addVideoStream(video, userVideoStream);
+                    streams[call.peer] = userVideoStream
+                    console.log("Set stream of: " + call.peer + " to " + streams[call.peer])
+                });
+            });
+
+        socket.on('user-connected', userId => {
+            connectToNewUser(userId, stream);
+        });
+
+        socket.on('user-disconnected', userId => {
+            if (peers[userId]) {
+                peers[userId].close();
+                delete peers[userId];
+            }
+            if (streams[userId]){
+                delete streams[userId];
+            }
+        });
+        })
+
+    }
+
+    useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
+        //socket.emit('join-room', roomId, user.id);
+        setupPeers();
         socket.on("new_message", (data) => {
             console.log(data);
             let div = document.createElement("div");
@@ -111,6 +192,7 @@ export default function Page(params) {
     };
 
 
+
     return (
         <div className="flex flex-col">
             <div className="h-32"><Logo /></div>;
@@ -142,9 +224,15 @@ export default function Page(params) {
                         </div>
                     ))}
                 </div>
-                <div className="mx-4 w-4/8 h-5/6 flex-1">
-                    <VideoStream roomId={id} />
+                <div className="mx-4 w-4/8 h-5/6 flex-1" ref={videoGrid}>
+                    
                 </div>
+                <button
+                    className="color #fff bg-blue-300 h-5/6 w-1/8"
+                    onClick={() => switchVideo(myPeer.current.id)} // put the user's id here
+                >
+                    Switch Video
+                </button>
 
                 <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
                     <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">

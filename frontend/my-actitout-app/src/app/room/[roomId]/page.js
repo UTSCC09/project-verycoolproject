@@ -125,7 +125,9 @@ const Room = (params) => {
                     Connect To Room
                 </ConnectButton>
             )}
-            <VideoGrid ref={videoGrid}></VideoGrid>
+            <VideoGrid ref={videoGrid}>
+
+            </VideoGrid>
         </Container>
     );
 };
