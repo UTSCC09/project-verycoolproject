@@ -6,7 +6,7 @@ const create_new_user = async (req, res) => {
         const { username } = req.body;
         const newUser = new User({ username });
         const savedUser = await newUser.save();
-        res.json(savedUser._id);
+        res.status(200).json(savedUser._id);
     } catch (error) {
         console.error('Error creating user:', error);
         res.status(500).json({ error: 'Internal Server Error' });

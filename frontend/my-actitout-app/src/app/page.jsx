@@ -50,6 +50,7 @@ const Main = () => {
         const { roomId, screen } = roomData;
 
         const userId = await createUser(username);
+        dispatch(set_userid(userId))
 
         addPlayerToRoom(roomId, userId)
           .then(() => {

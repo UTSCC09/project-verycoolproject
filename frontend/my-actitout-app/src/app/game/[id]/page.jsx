@@ -5,7 +5,7 @@ import React, { useEffect, useState } from "react";
 import { Avatar, Logo } from "../../../components";
 // import Brush from "../assets/img/pen.gif";
 import { VideoStream } from "../../../components/VideoStream/VideoStream"
-import { setStartEnd } from "../../../store/GameRoom/gameRoomSlice";
+import { setStartEnd, setWord } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import { io } from 'socket.io-client';
@@ -56,13 +56,11 @@ export default function Page(params) {
     const game = useSelector(selectGameState);
 
     const [message, setMessage] = useState("");
-    const [answer, setAnswer] = useState("");
     const dispatch = useDispatch();
 
     const sendMessage = () => {
-        if(message === answer) {console.log('correct')}
+        if(message === game.word) {console.log('correct')}
         socket.emit('message', { message: message, roomId: id });
-        socket.emit('new-round', { message: message, roomId: id });
         // socket.emit("message", message);
         setMessage("");
     };
@@ -71,7 +69,6 @@ export default function Page(params) {
         socket.emit('join-room', id);
 
         socket.on("new_message", (data) => {
-            console.log(data);
             let div = document.createElement("div");
             div.className = getMessageColor(data._type);
             div.innerHTML = data;
@@ -79,8 +76,7 @@ export default function Page(params) {
         })
 
         socket.on("new_word", (data) => {
-            console.log(data);
-            setAnswer(data);
+            dispatch(setWord(data));
         })
 
         return () => {
