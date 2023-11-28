@@ -42,15 +42,14 @@ const Main = () => {
     try {
       //  randomly finds a room from database and redirect to /lobby/roomid
       const roomData = await getRandomRoom();
+      const userId = await createUser(username);
+      dispatch(set_userid(userId))
 
       // Check if the room exists
       if (roomData.roomExists) {
         // Redirect to the existing room
         console.log("add user to existing room")
         const { roomId, screen } = roomData;
-
-        const userId = await createUser(username);
-        dispatch(set_userid(userId))
 
         addPlayerToRoom(roomId, userId)
           .then(() => {
@@ -71,10 +70,6 @@ const Main = () => {
         console.log("no room exist")
 
         // Create a new room  and make new user in db and then redirect to the newly created room
-        const userId = await createUser(username);
-        console.log(userId)
-        dispatch(set_userid(userId))
-
         //create a room with owner id
         const roomData = await createRoom(userId);
         const { id } = roomData
