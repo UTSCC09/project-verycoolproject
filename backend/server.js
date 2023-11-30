@@ -84,15 +84,22 @@ io.on(`connection`, socket => {
     console.log(message)
     console.log(roomId)
 
-    io.to(roomId).emit('new_message', `${socket.id.substring(0, 5)}: ${message}`);
+    io.to(roomId).emit('new-message', `${socket.id.substring(0, 5)}: ${message}`);
     console.log(socket.id)
     console.log('message sent')
   })
 
-  socket.on('new-round', (data) => {
-    const { roomId } = data
-    console.log('new round')
-    io.to(roomId).emit('new_word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+  socket.on('correct-guess', (data) => {
+
+  })
+
+  socket.on('round-end', (data) => {
+    const { roomId, players } = data
+    console.log('round-end')
+    io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+    const randomIndex = Math.floor(Math.random() * players.length)
+    const currentDate = new Date();
+    io.to(roomId).emit('new-round', {player: players[randomIndex], endTimer: currentDate.getSeconds() + 60 });
     console.log('new word sent')
   })
 })

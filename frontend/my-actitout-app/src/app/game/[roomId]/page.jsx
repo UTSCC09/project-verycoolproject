@@ -12,43 +12,12 @@ import { io } from 'socket.io-client';
 import { Peer } from "peerjs"
 
 const socket = io('http://localhost:4000')
-const currentDate = new Date();
-currentDate.setSeconds(currentDate.getSeconds() + 60);
-
-const useCounter = (endTimeStamp) => {
-    const [timeLeft, setTimeLeft] = useState(0);
-
-    useEffect(() => {
-        const timer = setInterval(() => {
-            const now = new Date();
-            const nowTimeStamp = now.getTime();
-            const diff = endTimeStamp - nowTimeStamp;
-            const seconds = Math.floor(diff / 1000);
-            if (seconds < 0) {
-                console.log("here");
-                clear();
-            } else {
-                //console.log(seconds);
-                setTimeLeft(seconds);
-            }
-        }, 1000);
-
-        const clear = () => {
-            clearInterval(timer);
-        };
-
-        return () => {
-            clear();
-        };
-    }, [endTimeStamp]);
-
-    return timeLeft;
-};
 
 
 export default function Page(params) {
 
-
+    const currentDate = new Date();
+    currentDate.setSeconds(currentDate.getSeconds() + 60);
     const { roomId } = params.params;
 
     const user = useSelector(selectUserState);
@@ -61,15 +30,56 @@ export default function Page(params) {
     const peersRef = useRef([]);
     const myPeer = useRef();
 
+    const [players, setPlayers] = useState("");
+    const [activePlayers, setActivePlayers] = useState("");
     const [message, setMessage] = useState("");
     const dispatch = useDispatch();
+    let timeLeft = useCounter(currentDate);
 
+    let correctGuesses = 0;
     let currentPlayerId = null; // This will control who's video is being played
 
+    const useCounter = (endTimeStamp) => {
+        const [timeLeft, setTimeLeft] = useState(0);
+    
+        useEffect(() => {
+            const timer = setInterval(() => {
+                const now = new Date();
+                const nowTimeStamp = now.getTime();
+                const diff = endTimeStamp - nowTimeStamp;
+                const seconds = Math.floor(diff / 1000);
+                if (seconds < 0) {
+                    console.log("here");
+                    socket.emit("round-end", {roomId: roomId, players: players})
+                    clear();
+                } else {
+                    //console.log(seconds);
+                    setTimeLeft(seconds);
+                }
+            }, 1000);
+    
+            const clear = () => {
+                clearInterval(timer);
+            };
+    
+            return () => {
+                clear();
+            };
+        }, [endTimeStamp]);
+    
+        return timeLeft;
+    };
+
     const sendMessage = () => {
-        if(message === game.word) {console.log('correct')}
+        if(message === game.word) {
+            console.log('correct')
+            socket.emit('correct-guess', {roomId: roomId})
+            if (correctGuesses >= activePlayers.length){
+                socket.emit("round-end", {roomId: roomId, players: players})
+            }
+        }
         socket.emit('message', { message: message, roomId: roomId });
-        socket.emit('new-round', { message: message, roomId: roomId });
+        // socket.emit('new-round', { message: message, roomId: roomId });
         // socket.emit("message", message);
         setMessage("");
     };
@@ -82,6 +92,7 @@ export default function Page(params) {
     }
 
     function connectToNewUser(userId, stream) {
+        setPlayers([...players, userId])
         const call = myPeer.current.call(userId, stream);
         const video = document.createElement('video');
         call.on('stream', userVideoStream => {
@@ -142,6 +153,11 @@ export default function Page(params) {
             if (streams[userId]){
                 delete streams[userId];
             }
+
+            const updatedPlayers = players.filter(playerId => playerId !== userId);
+            setPlayers(updatedPlayers);
+            const updatedActivePlayers = players.filter(playerId => playerId !== userId);
+            setActivePlayers(updatedActivePlayers);
         });
         })
 
@@ -150,7 +166,7 @@ export default function Page(params) {
     useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
         //socket.emit('join-room', roomId, user.id);
         setupPeers();
-        socket.on("new_message", (data) => {
+        socket.on("new-message", (data) => {
             console.log(data);
             let div = document.createElement("div");
             div.className = getMessageColor(data._type);
@@ -158,13 +174,29 @@ export default function Page(params) {
             document.getElementById("messages").appendChild(div);
         })
 
-        socket.on("new_word", (data) => {
+        socket.on("new-word", (data) => {
             dispatch(setWord(data));
         })
 
+        socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
+            const {endTimer, player} = data
+            timeLeft = useCounter(endTimer);
+            currentPlayerId = player;
+            switchVideo(currentPlayerId);
+            setActivePlayers(players); // Update active players to all players in current room
+            
+        })
+
+        socket.on("update-correct-guess", (data) => {
+            correctGuesses++;
+            if (correctGuesses >= activePlayers.length){
+                socket.emit("round-end", {roomId: roomId, players: players})
+            }
+        })
+
         return () => {
-            socket.off("new_message");
-            socket.off("new_word");
+            socket.off("new-message");
+            socket.off("new-word");
         };
     }, []);
 
@@ -172,9 +204,14 @@ export default function Page(params) {
         dispatch(setStartEnd({ start: 0, end: 60 }));
     }, []);
 
+    useEffect(() => { // If a player disconnects, we need to check if the next round should start
+        if (correctGuesses >= activePlayers.length){
+            socket.emit("round-end", {roomId: roomId, players: players})
+        }
+    }, [players])
+
 
     // console.log(game.startEnd.end);
-    const timeLeft = useCounter(currentDate);
 
     const getMessageColor = (type) => {
         switch (type) {
@@ -188,6 +225,10 @@ export default function Page(params) {
                 return "";
         }
     };
+
+    function temporaryButton(){
+        socket.emit("new-round", {roomId: roomId, players: players});
+    }
 
 
 
@@ -227,7 +268,7 @@ export default function Page(params) {
                 </div>
                 <button
                     className="color #fff bg-blue-300 h-5/6 w-1/8"
-                    onClick={() => switchVideo(myPeer.current.id)} // put the user's id here
+                    onClick={() => temporaryButton()} // put the user's id here
                 >
                     Switch Video
                 </button>
