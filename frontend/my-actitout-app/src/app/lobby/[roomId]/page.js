@@ -7,6 +7,7 @@ import { Avatar, Inputs } from "../../../components";
 import Load from "../../../../public/loading-white.gif"
 import { useDispatch, useSelector } from "react-redux";
 
+
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 
 
@@ -30,33 +31,60 @@ import {
 } from "../../../store/GameRoom/gameRoomSlice";
 import { set_id } from "../../../store/User/userSlice";
 
-import { addPlayerToRoom, getRoomById, get_players } from "../../../api/api.mjs"
+import { addPlayerToRoom, getRoomById, get_players, getUserId, getUsername, deletUser, deleteRoom } from "../../../api/api.mjs"
 import { io } from 'socket.io-client';
 
 const socket = io('http://localhost:4000')
 const Lobby = (params) => {
 
+
+
+
     const { roomId } = params.params;
 
     const dispatch = useDispatch();
     const user = useSelector(selectUserState);
-    const game = useSelector((state) => state.game);
+    const game = useSelector(selectGameState);
 
-    const { push } = useRouter();
+    const { push, back, replace } = useRouter();
     const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        console.log(document.cookie);
+    }, [])
+
+
+    const alertUser = (e) => {
+        replace("/");
+        return;
+    };
+
+    useEffect(() => {
+        window.addEventListener("beforeunload", alertUser);
+        return () => {
+            window.removeEventListener("beforeunload", alertUser);
+        };
+    }, [alertUser]);
+
+
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 // Make API call to get game data
                 const gameData = await getRoomById(roomId);
-                const { screen } = gameData;
-
+                const { screen, admin } = gameData;
+                console.log(screen);
+                console.log(game.screen);
                 const { players } = await get_players(roomId);
-
                 // Dispatch action to update game state in Redux
                 dispatch(setAllPlayers(players));
+                dispatch(setadmin(admin));
+                if (screen === "lobby") { dispatch(showLobby()); }
+                else { dispatch(showGame()); }
+
                 // dispatch(setRound(4));
+
 
                 // console.log(game);
                 // Set loading to false when data is fetched
@@ -91,9 +119,8 @@ const Lobby = (params) => {
     // }, []);
 
     const isCreator = useMemo(() => {
-        // return game.creator === user.id;
-        return true;
-    }, [game.creator, user.id]);
+        return game.admin === user.id;
+    }, [game.admin, user.id]);
 
 
     if (game.screen === "lobby") {
@@ -114,7 +141,7 @@ const Lobby = (params) => {
                                     disabled={!isCreator}
                                     onChange={(val) => {
                                         if (!isCreator) return;
-                                        setRounds(val);
+                                        dispatch(setRounds(val));
                                     }}
                                     options={[2, 3, 4, 5, 6]}
                                 />
@@ -124,7 +151,8 @@ const Lobby = (params) => {
                                     disabled={!isCreator}
                                     onChange={(val) => {
                                         if (!isCreator) return;
-                                        setactTime(val);
+                                        dispatch(setactTime(val));
+
                                     }}
                                     options={Array.from(
                                         { length: 16 },
@@ -172,27 +200,57 @@ const Lobby = (params) => {
                                     <div className="mt-2 sm:text-sm md:text-xl">
                                         {player.username}
                                     </div>
-                                    {/* {player.id === user.id && (
+                                    {player.id === user.id && (
                                         <div className="text-yellow-300">You</div>
                                     )}
-                                    {player.id === game.creator && (
+                                    {player.id === game.admin && (
                                         <div className="text-yellow-300">Admin</div>
-                                    )} */}
+                                    )}
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
                 <div className="mt-6 text-center">
-                    <h1 className="text-4xl text-white">Invite your friends!</h1>
+                    <h1 className="text-4xl text-black">Invite your friends! </h1>
+                    <HoverableDiv link={`${process.env.NEXT_PUBLIC_FRONTEND}?id=${roomId}`} />
                 </div>
             </div >
         );
     } else {
-        return <></>;
+        startGame();
     }
-
-
 }
+
+const HoverableDiv = ({ link }) => {
+    const [hovered, setHovered] = useState(false);
+
+    return (
+        <div className="flex bg-white mt-4">
+            <div
+                className="flex-1 text-md py-1"
+                onMouseOver={() => setHovered(true)}
+                onMouseOut={() => setHovered(false)}
+            >
+                {hovered ? (
+                    link
+                ) : (
+                    <div className="text-yellow-500">
+                        Hover over me to see the invite link!
+                    </div>
+                )}
+            </div>
+            <button
+                className="w-16 bg-yellow-500 hover:bg-yellow-600 text-white"
+                onClick={() => {
+                    navigator.clipboard.writeText(link);
+                }}
+            >
+                Copy
+            </button>
+        </div>
+    );
+};
+
 
 export default Lobby;

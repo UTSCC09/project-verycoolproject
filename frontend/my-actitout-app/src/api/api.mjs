@@ -1,3 +1,4 @@
+"use client"
 function send(method, url, data) {
     console.log(method, url, data);
     console.log(process.env.NEXT_PUBLIC_BACKEND, url);
@@ -6,12 +7,32 @@ function send(method, url, data) {
         headers: { "Content-Type": "application/json" },
         body: data ? JSON.stringify(data) : null,
     })
-        .then((response) => response.json())
+        .then((response) => {
+
+            response.headers.forEach((head) => { console.log(head) });
+            console.log(response.headers.getSetCookie());
+            return response.json()
+        })
         .catch((error) => {
             console.error("Error in API request:", error);
             throw error;
         });
 }
+
+
+
+export function getUsername() {
+    const usernameMatch = document.cookie.match(/(?:^|; )username=([^;]*)/);
+    if (usernameMatch) {
+        const decodedUsername = decodeURIComponent(usernameMatch[1]);
+        return decodedUsername;
+    } else {
+        return null; // or any other default value you want
+    }
+}
+
+
+
 
 
 export function createUser(username) {
@@ -39,4 +60,9 @@ export function getRoomById(roomId) {
 export function deleteRoom(roomId) {
     return send("DELETE", `/room/delete-room/${roomId}`, null);
 }
+
+export function deleteUser(userId) {
+    return send("DELETE", `/user/${userId}`, null);
+}
+
 

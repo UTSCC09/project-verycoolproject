@@ -1,43 +1,65 @@
-const express = require("express");
+// Importing modules using ESM syntax
+import express from "express";
+import { config as dotenvConfig } from "dotenv";
+import http from "http";
+import { createServer } from "http";
+import { Server as socketIO } from "socket.io";
+import cors from "cors";
+import session from "express-session";
 
-require("dotenv").config();
-const http = require("http");
+// Configuring environment variables
+dotenvConfig();
+
+// Importing a CommonJS module
+import { connectToMongoDB } from "./mongodb/setup.js";
+
+// Importing named exports
+import { UserRoutes, RoomRoutes } from './router/index.js';
+import { words } from './words.js';
+
+
+// Creating an Express app
 const app = express();
+const server = createServer(app);
 
-const server = http.createServer(app);
-const socket = require("socket.io");
-const cors = require('cors');
-const connectToMongoDB = require("./mongodb/setup")
+// Connecting to MongoDB
+connectToMongoDB();
 
-const { UserRoutes, RoomRoutes } = require('./router')
-
-const User = require("./models/User");
-const Room = require("./models/Rooms");
-const words = require('./words');
-
-const io = require('socket.io')(server, {
+const io = new socketIO(server, {
   cors: {
-    origin: "http://localhost:3000",
-    methods: "*"
-  }
-})
+    origin: `${process.env.frontendpath}:${process.env.frontendport}`,
+    methods: "*",
+  },
+});
 
 const users = {};
 const socketToRoom = {};
 
 
-connectToMongoDB()
-
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: `${process.env.frontendpath}:${process.env.frontendport}`,
   })
 );
 
 
-
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+
+app.use(
+  session({
+    secret: "mysecret",
+    resave: false,
+    saveUninitialized: true,
+    name: 'sessionId',
+    cookie: {
+      httpOnly: true, // Set the HttpOnly flag
+      sameSite: 'strict',
+    }
+  })
+);
+
+
 
 
 app.use("/room", RoomRoutes);

@@ -34,7 +34,6 @@ const userSlice = createSlice({
             localStorage.setItem('score', score);
             localStorage.setItem('rank', rank);
             localStorage.setItem('correct', correct);
-
         },
         set_userid: setLocalStorageValue('id'),
         set_username: setLocalStorageValue('username'),

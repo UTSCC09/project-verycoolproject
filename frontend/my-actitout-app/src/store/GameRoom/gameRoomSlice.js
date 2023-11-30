@@ -27,8 +27,6 @@ const initialState = {
 };
 
 const setField = (stateKey) => (state, action) => {
-    console.log(action.payload)
-    console.log(stateKey)
     state[stateKey] = action.payload;
 };
 
@@ -62,10 +60,10 @@ export const gameRoomSlice = createSlice({
             state.players = state.players.filter((p) => p.id !== action.payload);
         },
         showLobby: (state) => {
-            state.screen = "lobby'";
+            state.screen = "lobby";
         },
         showGame: (state) => {
-            state.screen = "in_game";
+            state.screen = "game";
         },
         addMessage: (state, action) => {
             state.messages.push(action.payload);

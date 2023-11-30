@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { createAvatar } from '@dicebear/core';
 import { adventurer } from '@dicebear/collection';
 import { sanitize } from "isomorphic-dompurify";
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { selectProperty } from '../selectors/useSelector';
@@ -12,7 +12,8 @@ import Load from "../../public/loading-white.gif"
 import { Logo } from "../components/"
 import { v1 } from "uuid"
 
-import { getRandomRoom, createRoom, createUser, addPlayerToRoom } from "../api/api.mjs"
+
+import { getRandomRoom, createRoom, createUser, addPlayerToRoom, getRoomById, getUsername,deleteUser } from "../api/api.mjs"
 
 
 const Main = () => {
@@ -22,10 +23,18 @@ const Main = () => {
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
-
   const { push } = useRouter();
 
+  const searchParams = useSearchParams();
+  const room_id = searchParams.get('id');
+
   const roomCodeInput = useRef(null);
+
+
+
+  useEffect(() => {
+    set_username(document.cookie)
+  }, [])
 
   useEffect(() => {
     setAvatarSvg(
@@ -40,24 +49,37 @@ const Main = () => {
     setLoading(true);
 
     try {
-      //  randomly finds a room from database and redirect to /lobby/roomid
-      const roomData = await getRandomRoom();
+
       const userId = await createUser(username);
+      console.log(document.cookie);
       dispatch(set_userid(userId))
 
-      // Check if the room exists
-      if (roomData.roomExists) {
-        // Redirect to the existing room
-        console.log("add user to existing room")
-        const { roomId, screen } = roomData;
+      let roomData;
+      //check if user has passed a room id  to join
+      if (room_id !== null) {
+        roomData = await getRoomById(room_id);
+        console.log("roomData")
+      }
+      else {
+        //  randomly finds a room from database and redirect to /lobby/roomid
+        roomData = await getRandomRoom();
 
-        addPlayerToRoom(roomId, userId)
+      }
+
+      console.log(roomData)
+      // Check if the room exists
+      if (roomData) {
+        // Redirect to the existing room
+        const { _id, screen } = roomData;
+
+        console.log("add user to existing room")
+        addPlayerToRoom(_id, userId)
           .then(() => {
             if (screen === "lobby") {
-              push(`lobby/${roomId}`);
+              push(`lobby/${_id}`);
             }
             else {
-              push(`game/${roomId}`);
+              push(`game/${_id}`);
             }
           })
           .catch((error) => {
@@ -68,13 +90,12 @@ const Main = () => {
       }
       else {
         console.log("no room exist")
-
         // Create a new room  and make new user in db and then redirect to the newly created room
         //create a room with owner id
         const roomData = await createRoom(userId);
-        const { id } = roomData
-        push(`lobby/${id}`);
-
+        const { roomId } = roomData
+        push(`lobby/${roomId}`);
+        
 
       }
     } catch (err) {
@@ -94,9 +115,9 @@ const Main = () => {
 
       //create a room wiht owner id
       const roomData = await createRoom(userId);
-      const { id } = roomData
+      const { roomId } = roomData
       setLoading(false);
-      push(`lobby/${id}`);
+      push(`lobby/${roomId}`);
 
     } catch (err) {
       console.error(err);
@@ -104,19 +125,6 @@ const Main = () => {
     }
   };
 
-  // const createRoom = async (event) => {
-  //   event.preventDefault();
-  //   setLoading(true);
-
-  //   try {
-  //     const roomId = v1();
-  //     push(`room/${roomId}`);
-  //     setLoading(false);
-  //   } catch (err) {
-  //     console.error(err);
-  //     setLoading(false);
-  //   }
-  // };
 
   const joinRoom = async (event) => {
     event.preventDefault();
@@ -133,7 +141,8 @@ const Main = () => {
   return (
     <div className="h-full dead-center">
       {loading ? (
-        <img src={Load} alt="loading" />
+        // <img src={Load} alt="loading" />
+        <h1>loading</h1>
       ) : (
         <div className=" flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
           <Logo />

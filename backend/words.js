@@ -10,5 +10,4 @@ const words = [
     "Firefighter",
     "Karate"
 ];
-
-module.exports = words;
+export { words };

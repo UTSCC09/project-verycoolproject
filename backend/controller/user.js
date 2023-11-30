@@ -1,4 +1,6 @@
-const User = require('../models/User');
+import { User } from "../models/User.js";
+
+import { parse, serialize } from "cookie";
 
 // Create a new user
 const create_new_user = async (req, res) => {
@@ -6,6 +8,15 @@ const create_new_user = async (req, res) => {
         const { username } = req.body;
         const newUser = new User({ username });
         const savedUser = await newUser.save();
+
+        // Initialize the user's session
+        req.session.userId = savedUser._id;
+        // Set a cookie for the session
+        res.setHeader(
+            "Set-Cookie",
+            serialize('username', username, { path: '/', maxAge: 60 * 60 * 24 * 7, httpOnly: false }),
+        );
+        console.log(savedUser._id)
         res.status(200).json(savedUser._id);
     } catch (error) {
         console.error('Error creating user:', error);
@@ -60,6 +71,7 @@ const update_user = async (req, res) => {
 // Delete a user by ID
 const delete_user = async (req, res) => {
     try {
+        req.session.destroy();
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) {
             return res.status(404).json({ error: 'User not found' });
@@ -82,4 +94,7 @@ const get_users_by_romm = async (req, res) => {
     }
 };
 
-module.exports = { create_new_user, get_user_by_id, get_all_user, get_users_by_romm, update_user, delete_user }
+export default {
+    create_new_user, get_all_user, get_user_by_id, get_users_by_romm, update_user, delete_user
+};
+

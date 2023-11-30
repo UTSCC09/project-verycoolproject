@@ -1,13 +1,12 @@
-const Room = require('../models/Rooms');
-const User = require('../models/User');
-
+import { User } from "../models/User.js";
+import { Room } from "../models/Rooms.js";
 // Create a room
 const create_room = async (req, res) => {
     try {
         const { userId } = req.body;
         const newRoom = new Room({ admin: userId, players: [userId] });
         await newRoom.save();
-        res.json({ id: newRoom._id });
+        res.json({ roomId: newRoom._id });
     } catch (error) {
         console.error('Error creating room:', error);
         res.status(500).json({ error: error });
@@ -21,9 +20,9 @@ const get_random_room = async (req, res) => {
         const existingRoom = await Room.findOne();
 
         if (existingRoom) {
-            res.json({ roomExists: true, roomId: existingRoom._id, screen: existingRoom.screen });
+            res.json(existingRoom);
         } else {
-            res.json({ roomExists: false });
+            res.status(404).json({ error: 'No Room not found' });
         }
     } catch (error) {
         console.error('Error checking room:', error);
@@ -111,6 +110,40 @@ const deleteRoom = async (req, res) => {
     }
 };
 
+// Delete a user from rom
+const removePlayerFromRoom = async (req, res) => {
+    try {
+        const { roomId, userId } = req.params;
+
+        // Find the room by ID
+        const room = await Room.findById(roomId);
+
+        if (!room) {
+            return res.status(404).json({ error: 'Room not found' });
+        }
+
+        // Remove the user from the players array
+        const index = room.players.indexOf(userId);
+        if (index !== -1) {
+            room.players.splice(index, 1);
+        }
+
+        // Save the updated room
+        await room.save();
+
+
+        await User.deleteOne({ _id: userId });
+        // Update the user's room field
+
+        res.json({ message: 'User removed from room successfully.' });
+    } catch (error) {
+        console.error('Error removing player from room:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+};
+
+
+
 const addPlayerToRoom = async (req, res) => {
     try {
         const { roomId, userId } = req.params;
@@ -158,9 +191,6 @@ const getRoundData = async (req, res) => {
 
 };
 
-
-
-
-module.exports = { get_players, check_room_exist, addPlayerToRoom, create_room, deleteRoom, get_random_room, get_room_by_id }
+export default { get_players, check_room_exist, addPlayerToRoom, removePlayerFromRoom, create_room, deleteRoom, get_random_room, get_room_by_id };
 
 

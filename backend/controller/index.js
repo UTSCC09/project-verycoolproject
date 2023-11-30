@@ -1,2 +1,2 @@
-module.exports.UserController = require("./user");
-module.exports.RoomController = require("./room");
+export { default as UserController } from "./user.js";
+export { default as RoomController } from "./room.js";
