@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Avatar, Inputs } from "../../../components";
 import Load from "../../../../public/loading-white.gif"
 import { useDispatch, useSelector } from "react-redux";
+import Game from "./game"
 
 
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
@@ -33,11 +34,10 @@ import { set_id } from "../../../store/User/userSlice";
 
 import { addPlayerToRoom, getRoomById, get_players, getUserId, getUsername, deletUser, deleteRoom } from "../../../api/api.mjs"
 import { io } from 'socket.io-client';
+import { Socket } from "socket.io";
 
-const socket = io('http://localhost:4000')
+
 const Lobby = (params) => {
-
-
 
 
     const { roomId } = params.params;
@@ -48,10 +48,23 @@ const Lobby = (params) => {
 
     const { push, back, replace } = useRouter();
     const [loading, setLoading] = useState(true);
-
     useEffect(() => {
         console.log(document.cookie);
     }, [])
+
+
+    const [socket, setSocket] = useState();
+
+    useEffect(() => {
+        // const roomId = location;
+        if (roomId) {
+            const _socket = io(process.env.NEXT_PUBLIC_BACKEND, {
+                transports: ["websocket"],
+            });
+            // getDetails();
+            setSocket(_socket);
+        }
+    }, []);
 
 
 
@@ -83,27 +96,88 @@ const Lobby = (params) => {
 
         // Call fetchData when the component mounts
         fetchData();
-    }, [dispatch, roomId]);
-
-    function startGame() {
-        push(`/game/${roomId}`)
-    }
+    }, [roomId]);
 
 
+    const addplayer = (player) => {
+        console.log("Player added");
+        dispatch(addPlayer(player));
+        dispatch(
+            addMessage({
+                type: "join",
+                message: `${player.username} joined the game.`,
+            })
+        );
+    };
 
-    // add code to add user image on socket info
-    // useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
-    //     socket.emit('join-room', id);
+    const deleteplayer = (userId, username) => {
+        console.log("Player removed");
+        dispatch(removePlayer(userId));
+        dispatch(addMessage({
+            type: "left",
+            message: `${username} left the game.`
+        }));
+    };
 
-    //     socket.on("new_user", (data) => {
-    //         console.log(data);
-    //         smthhhhhh
-    //     })
+    const setGameRounds = (val) => {
+        dispatch(setRounds(val));
+        if (emit)
+            socket.emit(`set:rounds`, {
+                roomid: roomId,
+                rounds: val,
+            });
+    };
+    
+    const setGameActTime = (val) => {
+        dispatch(setactTime(val));
+        if (emit)
+            socket.emit(`set:rounds`, {
+                roomid: roomId,
+                rounds: val,
+            });
+    };
 
-    //     return () => {
-    //         socket.off("new_message");
-    //     };
-    // }, []);
+    const setCustomWords = (val, emit = true) => {
+        dispatch(set_customWords(val));
+        if (emit)
+            socket.emit(`game:set:customWords`, {
+                id: gameId,
+                customWords: val,
+            });
+    };
+
+    // // add code to add user image on socket info
+    useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
+        if (!socket) return;
+
+        socket.emit('join-room', roomId, user.id, user.username || localStorage.getItem("username"));
+
+        socket.on("user-connected", (data) => {
+            console.log(data);
+            addplayer(data);
+        })
+
+        socket.on("user-disconnected", ({ userId, username }) => {
+
+            deleteplayer(userId, username);
+        })
+
+        socket.on("new-message", (data) => {
+            console.log(data);
+            const { type, username, message } = data;
+            dispatch(
+                addMessage({
+                    type: type,
+                    username: username,
+                    message: message,
+                })
+            );
+        })
+
+        return () => {
+            socket.off("new_message");
+        };
+    }, [socket]);
 
     const isCreator = useMemo(() => {
         return game.admin === user.id;
@@ -128,7 +202,7 @@ const Lobby = (params) => {
                                     disabled={!isCreator}
                                     onChange={(val) => {
                                         if (!isCreator) return;
-                                        dispatch(setRounds(val));
+                                        setGameRounds(val);
                                     }}
                                     options={[2, 3, 4, 5, 6]}
                                 />
@@ -138,8 +212,7 @@ const Lobby = (params) => {
                                     disabled={!isCreator}
                                     onChange={(val) => {
                                         if (!isCreator) return;
-                                        dispatch(setactTime(val));
-
+                                        setGameActTime(val);
                                     }}
                                     options={Array.from(
                                         { length: 16 },
@@ -200,12 +273,13 @@ const Lobby = (params) => {
                 </div>
                 <div className="mt-6 text-center">
                     <h1 className="text-4xl text-black">Invite your friends! </h1>
-                    <HoverableDiv link={`${process.env.NEXT_PUBLIC_FRONTEND}?id=${roomId}`} />
+
+                    <HoverableDiv link={`${process.env.FRONTEND}/?id=${roomId}`} />
                 </div>
             </div >
         );
     } else {
-        startGame();
+        return <Game socket={socket} roomId={roomId} user={user} />;
     }
 }
 

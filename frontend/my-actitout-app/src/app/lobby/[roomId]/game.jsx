@@ -1,26 +1,21 @@
 "use client"
 import React, { useEffect, useState, useRef } from "react";
 
-// import WhiteBoard from "../Components/WhiteBoard";
 import { Avatar, Logo } from "../../../components";
-// import Brush from "../assets/img/pen.gif";
+
 import { VideoStream } from "../../../components/VideoStream/VideoStream"
 import { setStartEnd, setWord } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
-import { io } from 'socket.io-client';
 import { Peer } from "peerjs"
 
-const socket = io('http://localhost:4000')
 
-
-export default function Page(params) {
+export default function Game(props) {
 
     const currentDate = new Date();
     currentDate.setSeconds(currentDate.getSeconds() + 60);
-    const { roomId } = params.params;
+    const { roomId, socket, user } = props;
 
-    const user = useSelector(selectUserState);
     const game = useSelector(selectGameState);
 
     const [peers, setPeers] = useState([]);
@@ -29,6 +24,7 @@ export default function Page(params) {
     const videoGrid = useRef(null);
     const peersRef = useRef([]);
     const myPeer = useRef();
+
 
     const [players, setPlayers] = useState("");
     const [activePlayers, setActivePlayers] = useState("");
@@ -40,7 +36,7 @@ export default function Page(params) {
 
     const useCounter = (endTimeStamp) => {
         const [timeLeft, setTimeLeft] = useState(0);
-    
+
         useEffect(() => {
             const timer = setInterval(() => {
                 const now = new Date();
@@ -49,34 +45,34 @@ export default function Page(params) {
                 const seconds = Math.floor(diff / 1000);
                 if (seconds < 0) {
                     console.log("here");
-                    socket.emit("round-end", {roomId: roomId, players: players})
+                    socket.emit("round-end", { roomId: roomId, players: players })
                     clear();
                 } else {
                     //console.log(seconds);
                     setTimeLeft(seconds);
                 }
             }, 1000);
-    
+
             const clear = () => {
                 clearInterval(timer);
             };
-    
+
             return () => {
                 clear();
             };
         }, [endTimeStamp]);
-    
+
         return timeLeft;
     };
 
     let timeLeft = useCounter(currentDate);
 
     const sendMessage = () => {
-        if(message === game.word) {
+        if (message === game.word) {
             console.log('correct')
-            socket.emit('correct-guess', {roomId: roomId})
-            if (correctGuesses >= activePlayers.length){
-                socket.emit("round-end", {roomId: roomId, players: players})
+            socket.emit('correct-guess', { roomId: roomId })
+            if (correctGuesses >= activePlayers.length) {
+                socket.emit("round-end", { roomId: roomId, players: players })
             }
         }
         socket.emit('message', { message: message, roomId: roomId });
@@ -107,8 +103,8 @@ export default function Page(params) {
         peers[userId] = call;
     }
 
-    function switchVideo(userId){
-        if (videoGrid.current){
+    function switchVideo(userId) {
+        if (videoGrid.current) {
             const video = document.createElement('video');
             addVideoStream(video, streams[userId]);
             videoGrid.current.innerHTML = "";
@@ -128,7 +124,6 @@ export default function Page(params) {
         myPeer.current = new Peer(user.id); //user.id not initialized??
 
         myPeer.current.on('open', id => {
-            socket.emit('join-room', roomId, id);
             addVideoStream(myVideo.current, stream);
             streams[myPeer.current.id] = stream;
             console.log("Set stream of: " + myPeer.current.id + " to " + streams[myPeer.current.id])
@@ -142,24 +137,24 @@ export default function Page(params) {
                 });
             });
 
-        socket.on('user-connected', userId => {
-            connectToNewUser(userId, stream);
-        });
+            socket.on('user-connected', userId => {
+                connectToNewUser(userId, stream);
+            });
 
-        socket.on('user-disconnected', userId => {
-            if (peers[userId]) {
-                peers[userId].close();
-                delete peers[userId];
-            }
-            if (streams[userId]){
-                delete streams[userId];
-            }
+            socket.on('user-disconnected', userId => {
+                if (peers[userId]) {
+                    peers[userId].close();
+                    delete peers[userId];
+                }
+                if (streams[userId]) {
+                    delete streams[userId];
+                }
 
-            const updatedPlayers = players.filter(playerId => playerId !== userId);
-            setPlayers(updatedPlayers);
-            const updatedActivePlayers = players.filter(playerId => playerId !== userId);
-            setActivePlayers(updatedActivePlayers);
-        });
+                const updatedPlayers = players.filter(playerId => playerId !== userId);
+                setPlayers(updatedPlayers);
+                const updatedActivePlayers = players.filter(playerId => playerId !== userId);
+                setActivePlayers(updatedActivePlayers);
+            });
         })
 
     }
@@ -167,31 +162,25 @@ export default function Page(params) {
     useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
         //socket.emit('join-room', roomId, user.id);
         setupPeers();
-        socket.on("new-message", (data) => {
-            console.log(data);
-            let div = document.createElement("div");
-            div.className = getMessageColor(data._type);
-            div.innerHTML = data;
-            document.getElementById("messages").appendChild(div);
-        })
+
 
         socket.on("new-word", (data) => {
             dispatch(setWord(data));
         })
 
         socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
-            const {endTimer, player} = data
+            const { endTimer, player } = data
             timeLeft = useCounter(endTimer);
             currentPlayerId = player;
             switchVideo(currentPlayerId);
             setActivePlayers(players); // Update active players to all players in current room
-            
+
         })
 
         socket.on("update-correct-guess", (data) => {
             correctGuesses++;
-            if (correctGuesses >= activePlayers.length){
-                socket.emit("round-end", {roomId: roomId, players: players})
+            if (correctGuesses >= activePlayers.length) {
+                socket.emit("round-end", { roomId: roomId, players: players })
             }
         })
 
@@ -201,13 +190,14 @@ export default function Page(params) {
         };
     }, []);
 
+
     useEffect(() => {
         dispatch(setStartEnd({ start: 0, end: 60 }));
     }, []);
 
     useEffect(() => { // If a player disconnects, we need to check if the next round should start
-        if (correctGuesses >= activePlayers.length){
-            socket.emit("round-end", {roomId: roomId, players: players})
+        if (correctGuesses >= activePlayers.length) {
+            socket.emit("round-end", { roomId: roomId, players: players })
         }
     }, [players])
 
@@ -220,15 +210,15 @@ export default function Page(params) {
                 return "text-green-400";
             case "correct":
                 return "text-green-600";
-            case "leave":
+            case "left":
                 return "text-red-400";
             default:
                 return "";
         }
     };
 
-    function temporaryButton(){
-        socket.emit("new-round", {roomId: roomId, players: players});
+    function temporaryButton() {
+        socket.emit("new-round", { roomId: roomId, players: players });
     }
 
 
@@ -265,7 +255,7 @@ export default function Page(params) {
                     ))}
                 </div>
                 <div className="mx-4 w-4/8 h-5/6 flex-1" ref={videoGrid}>
-                    
+
                 </div>
                 <button
                     className="color #fff bg-blue-300 h-5/6 w-1/8"
@@ -276,14 +266,11 @@ export default function Page(params) {
 
                 <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
                     <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">
-                        {/* <div key={"gello"}>
-                            lord: hello
-                        </div>
                         {game.messages.map((msg) => (
-                            <div className={getMessageColor(msg._type)} key={msg.message}>
-                                {msg._type === "normal" ? `${msg.username}: ` : ""} {msg.message}
+                            <div className={getMessageColor(msg.type)} key={msg.message}>
+                                {msg.type === "normal" ? `${msg.username}: ` : ""} {msg.message}
                             </div>
-                        ))} */}
+                        ))}
                     </div>
                     <input
                         className="w-full border border-gray rounded px-2 mb-2"
