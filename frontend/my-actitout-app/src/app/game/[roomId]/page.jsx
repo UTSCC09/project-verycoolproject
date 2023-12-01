@@ -34,7 +34,6 @@ export default function Page(params) {
     const [activePlayers, setActivePlayers] = useState("");
     const [message, setMessage] = useState("");
     const dispatch = useDispatch();
-    let timeLeft = useCounter(currentDate);
 
     let correctGuesses = 0;
     let currentPlayerId = null; // This will control who's video is being played
@@ -69,6 +68,8 @@ export default function Page(params) {
     
         return timeLeft;
     };
+
+    let timeLeft = useCounter(currentDate);
 
     const sendMessage = () => {
         if(message === game.word) {

@@ -54,19 +54,6 @@ const Lobby = (params) => {
     }, [])
 
 
-    const alertUser = (e) => {
-        replace("/");
-        return;
-    };
-
-    useEffect(() => {
-        window.addEventListener("beforeunload", alertUser);
-        return () => {
-            window.removeEventListener("beforeunload", alertUser);
-        };
-    }, [alertUser]);
-
-
 
     useEffect(() => {
         const fetchData = async () => {
