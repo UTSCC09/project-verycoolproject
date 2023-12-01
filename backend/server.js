@@ -6,6 +6,7 @@ import { createServer } from "http";
 import { Server as socketIO } from "socket.io";
 import cors from "cors";
 import session from "express-session";
+import { User } from "../models/User.js";
 
 // Configuring environment variables
 dotenvConfig();
@@ -27,7 +28,7 @@ connectToMongoDB();
 
 const io = new socketIO(server, {
   cors: {
-    origin: `${process.env.frontendpath}:${process.env.frontendport}`,
+    origin: process.env.FRONTEND,
     methods: "*",
   },
 });
@@ -36,11 +37,15 @@ const users = {};
 const socketToRoom = {};
 
 
-app.use(
-  cors({
-    origin: `${process.env.frontendpath}:${process.env.frontendport}`,
-  })
-);
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", process.env.FRONTEND);
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.header("Access-Control-Allow-Methods", "*");
+  next();
+});
+
+
+
 
 
 app.use(express.urlencoded({ extended: false }));
@@ -66,26 +71,46 @@ app.use("/room", RoomRoutes);
 app.use("/user", UserRoutes);
 
 io.on(`connection`, socket => {
-  socket.on('join-room', (roomId, userId) => {
+  socket.on('join-room', (roomId, userId, username) => {
 
-    console.log("Room ID: " + roomId + " | User ID: " + userId)
+    console.log("Room ID: " + roomId + " | User ID: " + userId + " | username " + username)
     socket.join(roomId)
-    socket.to(roomId).emit('user-connected', userId)
+
+    socket.to(roomId).emit('user-connected', {
+      id: userId,
+      username: username,
+      score: 0,
+      rank: 0,
+      correct: 0,
+    });
 
     socket.on('disconnect', () => {
-      socket.to(roomId).emit('user-disconnected', userId)
+      try {
+        User.findByIdAndDelete(userId);
+      } catch (err) {
+        console.log(err)
+      }
+      socket.to(roomId).emit('user-disconnected', { userId: userId, username: username })
       console.log('disconnected')
     })
   })
 
+
+  // Listening for a rounds event 
+  socket.on('set:rounds', (data) => {
+    const { val, roomId } = data;
+    io.to(roomId).emit('new:rounds', val);
+    console.log('message sent')
+  })
+
   // Listening for a message event 
   socket.on('message', (data) => {
-    const { message, roomId } = data
+    const { message, roomId, username } = data;
     console.log(message)
     console.log(roomId)
+    console.log(username)
 
-    io.to(roomId).emit('new-message', `${socket.id.substring(0, 5)}: ${message}`);
-    console.log(socket.id)
+    io.to(roomId).emit('new-message', { username: username, message: message, type: "" });
     console.log('message sent')
   })
 
@@ -99,7 +124,7 @@ io.on(`connection`, socket => {
     io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
     const randomIndex = Math.floor(Math.random() * players.length)
     const currentDate = new Date();
-    io.to(roomId).emit('new-round', {player: players[randomIndex], endTimer: currentDate.getSeconds() + 60 });
+    io.to(roomId).emit('new-round', { player: players[randomIndex], endTimer: currentDate.getSeconds() + 60 });
     console.log('new word sent')
   })
 })
