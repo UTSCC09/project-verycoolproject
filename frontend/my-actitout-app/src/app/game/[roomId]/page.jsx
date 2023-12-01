@@ -11,7 +11,7 @@ import { selectGameState, selectUserState } from '../../../selectors/useSelector
 import { io } from 'socket.io-client';
 import { Peer } from "peerjs"
 
-const socket = io('http://localhost:4000')
+const socket = io(proccess.env.NEXT_PUBLIC_BACKEND)
 const currentDate = new Date();
 currentDate.setSeconds(currentDate.getSeconds() + 60);
 
@@ -67,7 +67,7 @@ export default function Page(params) {
     let currentPlayerId = null; // This will control who's video is being played
 
     const sendMessage = () => {
-        if(message === game.word) {console.log('correct')}
+        if (message === game.word) { console.log('correct') }
         socket.emit('message', { message: message, roomId: roomId });
         socket.emit('new-round', { message: message, roomId: roomId });
         // socket.emit("message", message);
@@ -95,8 +95,8 @@ export default function Page(params) {
         peers[userId] = call;
     }
 
-    function switchVideo(userId){
-        if (videoGrid.current){
+    function switchVideo(userId) {
+        if (videoGrid.current) {
             const video = document.createElement('video');
             addVideoStream(video, streams[userId]);
             videoGrid.current.innerHTML = "";
@@ -130,19 +130,19 @@ export default function Page(params) {
                 });
             });
 
-        socket.on('user-connected', userId => {
-            connectToNewUser(userId, stream);
-        });
+            socket.on('user-connected', userId => {
+                connectToNewUser(userId, stream);
+            });
 
-        socket.on('user-disconnected', userId => {
-            if (peers[userId]) {
-                peers[userId].close();
-                delete peers[userId];
-            }
-            if (streams[userId]){
-                delete streams[userId];
-            }
-        });
+            socket.on('user-disconnected', userId => {
+                if (peers[userId]) {
+                    peers[userId].close();
+                    delete peers[userId];
+                }
+                if (streams[userId]) {
+                    delete streams[userId];
+                }
+            });
         })
 
     }
@@ -223,7 +223,7 @@ export default function Page(params) {
                     ))}
                 </div>
                 <div className="mx-4 w-4/8 h-5/6 flex-1" ref={videoGrid}>
-                    
+
                 </div>
                 <button
                     className="color #fff bg-blue-300 h-5/6 w-1/8"

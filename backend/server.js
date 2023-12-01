@@ -27,7 +27,7 @@ connectToMongoDB();
 
 const io = new socketIO(server, {
   cors: {
-    origin: `${process.env.frontendpath}:${process.env.frontendport}`,
+    origin: [process.env.FRONTEND],
     methods: "*",
   },
 });
@@ -36,11 +36,12 @@ const users = {};
 const socketToRoom = {};
 
 
-app.use(
-  cors({
-    origin: `${process.env.frontendpath}:${process.env.frontendport}`,
-  })
-);
+app.use(function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", process.env.FRONTEND);
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  res.header("Access-Control-Allow-Methods", "*");
+  next();
+});
 
 
 app.use(express.urlencoded({ extended: false }));

@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import SimplePeer from 'simple-peer';
 import io from 'socket.io-client';
 
-const socket = io('http://localhost:4000');
+const socket = io(NEXT_PUBLIC_BACKEND);
 
 export function VideoStream(props) {
 

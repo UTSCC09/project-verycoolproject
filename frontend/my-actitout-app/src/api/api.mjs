@@ -1,6 +1,5 @@
 "use client"
 function send(method, url, data) {
-    console.log(method, url, data);
     console.log(process.env.NEXT_PUBLIC_BACKEND, url);
     return fetch(`${process.env.NEXT_PUBLIC_BACKEND}${url}`, {
         method: method,
@@ -30,8 +29,6 @@ export function getUsername() {
         return null; // or any other default value you want
     }
 }
-
-
 
 
 

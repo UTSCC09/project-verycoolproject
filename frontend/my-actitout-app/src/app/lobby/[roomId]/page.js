@@ -34,7 +34,7 @@ import { set_id } from "../../../store/User/userSlice";
 import { addPlayerToRoom, getRoomById, get_players, getUserId, getUsername, deletUser, deleteRoom } from "../../../api/api.mjs"
 import { io } from 'socket.io-client';
 
-const socket = io('http://localhost:4000')
+const socket = io(NEXT_PUBLIC_BACKEND)
 const Lobby = (params) => {
 
 
@@ -54,17 +54,6 @@ const Lobby = (params) => {
     }, [])
 
 
-    const alertUser = (e) => {
-        replace("/");
-        return;
-    };
-
-    useEffect(() => {
-        window.addEventListener("beforeunload", alertUser);
-        return () => {
-            window.removeEventListener("beforeunload", alertUser);
-        };
-    }, [alertUser]);
 
 
 
@@ -213,7 +202,7 @@ const Lobby = (params) => {
                 </div>
                 <div className="mt-6 text-center">
                     <h1 className="text-4xl text-black">Invite your friends! </h1>
-                    <HoverableDiv link={`${process.env.NEXT_PUBLIC_FRONTEND}?id=${roomId}`} />
+                    <HoverableDiv link={`${process.env.FRONTEND}?id=${roomId}`} />
                 </div>
             </div >
         );
