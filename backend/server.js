@@ -73,7 +73,6 @@ app.use("/user", UserRoutes);
 
 io.on(`connection`, socket => {
   socket.on('join-room', (roomId, userId, username) => {
-
     console.log("Room ID: " + roomId + " | User ID: " + userId + " | username " + username)
     socket.join(roomId)
     socket.to(roomId).emit('user-connected', {
@@ -83,6 +82,16 @@ io.on(`connection`, socket => {
       rank: 0,
       correct: 0,
     });
+
+    socket.on('join-game', (roomId, userId) => {
+
+      console.log(userId + "joined video room")
+      socket.to(roomId).emit('user-connected-game', userId)
+  
+      socket.on('disconnect', () => {
+        socket.to(roomId).emit('user-disconnected-game', userId)
+      })
+    })
 
     socket.on('disconnect', (async () => {
       console.log("disconnected")
@@ -113,8 +122,6 @@ io.on(`connection`, socket => {
     })
     );
   });
-
-
 
   // Listening for a rounds event 
   socket.on('set:rounds', async (data) => {
@@ -227,7 +234,7 @@ io.on(`connection`, socket => {
     io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
     const randomIndex = Math.floor(Math.random() * players.length)
     const currentDate = new Date();
-    io.to(roomId).emit('new-round', { player: players[randomIndex], endTimer: currentDate.getSeconds() + 60 });
+    io.to(roomId).emit('new-round', { player: players[randomIndex].id, endTimer: currentDate.getSeconds() + 60 });
     console.log('new word sent')
   })
 })

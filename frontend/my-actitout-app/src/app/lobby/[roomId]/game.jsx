@@ -64,7 +64,7 @@ export default function Game(props) {
         return timeLeft;
     };
 
-    let timeLeft = useCounter(currentDate);
+    const timeLeft = useCounter(currentDate)
 
     const sendMessage = () => {
         if (message === game.word) {
@@ -122,6 +122,7 @@ export default function Game(props) {
         myPeer.current = new Peer(user.id); //user.id not initialized??
 
         myPeer.current.on('open', id => {
+            socket.emit("join-game", roomId, id);
             addVideoStream(myVideo.current, stream);
             streams[myPeer.current.id] = stream;
             console.log("Set stream of: " + myPeer.current.id + " to " + streams[myPeer.current.id])
@@ -135,11 +136,11 @@ export default function Game(props) {
                 });
             });
 
-            socket.on('user-connected', userId => {
+            socket.on('user-connected-game', userId => {
                 connectToNewUser(userId, stream);
             });
 
-            socket.on('user-disconnected', userId => {
+            socket.on('user-disconnected-game', userId => {
                 if (peers[userId]) {
                     peers[userId].close();
                     delete peers[userId];
@@ -163,7 +164,7 @@ export default function Game(props) {
 
         socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
             const { endTimer, player } = data
-            timeLeft = useCounter(endTimer);
+            //timeLeft = useCounter(endTimer); Needs fix!
             currentPlayerId = player;
             switchVideo(currentPlayerId);
 
@@ -206,7 +207,7 @@ export default function Game(props) {
     };
 
     function temporaryButton() {
-        socket.emit("new-round", { roomId: roomId, players: game.players });
+        socket.emit("round-end", { roomId: roomId, players: game.players });
     }
 
 
