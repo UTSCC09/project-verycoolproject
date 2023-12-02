@@ -12,13 +12,14 @@ const initialState = {
     screen: "lobby",
     rounds: 2,
     curr_round: 1,
-    actTime: 80,
+    actTime: 60,
     customWords: [],
     players: [],
     messages: [],
     admin: '',
     turn: '',
     word: '',
+    corrects: 0,
     timerLeft: 0,
     startEnd: {
         start: 0,
@@ -52,7 +53,9 @@ export const gameRoomSlice = createSlice({
         setadmin: setField('admin'),
         setTurn: setField('turn'),
         setWord: setField('word'),
+        setCorrects: setField("corrects"),
         setAllPlayers: setField('players'),
+        setTimerLeft: setField('timerLeft'),
         addPlayer: (state, action) => {
             state.players.push(action.payload);
         },
@@ -86,8 +89,10 @@ export const {
     addPlayer,
     removePlayer,
     setAllPlayers,
+    setCorrects,
     showLobby,
-    showGame
+    showGame,
+    setTimerLeft
 } = gameRoomSlice.actions;
 
 // export const selectGameState = (RootState) => RootState.game;

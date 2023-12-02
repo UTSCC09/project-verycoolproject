@@ -13,7 +13,7 @@ import { Logo } from "../components/"
 import { v1 } from "uuid"
 
 
-import { getRandomRoom, createRoom, createUser, addPlayerToRoom, getRoomById, getUsername,deleteUser } from "../api/api.mjs"
+import { getRandomRoom, createRoom, createUser, addPlayerToRoom, getRoomById, getUsername, deleteUser } from "../api/api.mjs"
 
 
 const Main = () => {
@@ -70,17 +70,12 @@ const Main = () => {
       // Check if the room exists
       if (roomData) {
         // Redirect to the existing room
-        const { _id, screen } = roomData;
+        const { _id } = roomData;
 
         console.log("add user to existing room")
         addPlayerToRoom(_id, userId)
           .then(() => {
-            if (screen === "lobby") {
-              push(`lobby/${_id}`);
-            }
-            else {
-              push(`game/${_id}`);
-            }
+            push(`lobby/${_id}`);
           })
           .catch((error) => {
             // Your code to handle any errors that occurred during the addition
@@ -95,7 +90,7 @@ const Main = () => {
         const roomData = await createRoom(userId);
         const { roomId } = roomData
         push(`lobby/${roomId}`);
-        
+
 
       }
     } catch (err) {
@@ -125,18 +120,6 @@ const Main = () => {
     }
   };
 
-
-  const joinRoom = async (event) => {
-    event.preventDefault();
-
-    try {
-      let roomCode = roomCodeInput.current.value;
-      console.log("Joining Room Code: " + roomCode);
-      push(`room/${roomCode}`);
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   return (
     <div className="h-full dead-center">
@@ -173,13 +156,6 @@ const Main = () => {
                 </div>
               </div>
 
-              <input
-                id="join_room_code"
-                name="join_room_code"
-                type="text"
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                ref={roomCodeInput}
-              />
 
               <div>
                 <button
@@ -193,18 +169,6 @@ const Main = () => {
                   onClick={createGame}
                 >
                   Create A Game
-                </button>
-                <button
-                  className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
-                  onClick={createRoom}
-                >
-                  Create A Room
-                </button>
-                <button
-                  className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
-                  onClick={joinRoom}
-                >
-                  Join A Room
                 </button>
               </div>
 

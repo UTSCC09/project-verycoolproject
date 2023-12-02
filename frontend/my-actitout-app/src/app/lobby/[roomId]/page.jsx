@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from 'next/navigation';
 import { Avatar, Inputs } from "../../../components";
@@ -15,6 +14,7 @@ import { selectGameState, selectUserState } from '../../../selectors/useSelector
 import {
     clearGameState,
     setStartEnd,
+    setCorrects,
     setRound,
     setWord,
     setInitial,
@@ -26,6 +26,7 @@ import {
     setCustomWords,
     setAllPlayers,
     addPlayer,
+    setTimerLeft,
     removePlayer,
     showLobby,
     showGame
@@ -34,7 +35,7 @@ import { set_id } from "../../../store/User/userSlice";
 
 import { addPlayerToRoom, getRoomById, get_players, getUserId, getUsername, deletUser, deleteRoom } from "../../../api/api.mjs"
 import { io } from 'socket.io-client';
-import { Socket } from "socket.io";
+// import { Socket } from "socket.io";
 
 
 const Lobby = (params) => {
@@ -58,9 +59,7 @@ const Lobby = (params) => {
     useEffect(() => {
         // const roomId = location;
         if (roomId) {
-            const _socket = io(process.env.NEXT_PUBLIC_BACKEND, {
-                transports: ["websocket"],
-            });
+            const _socket = io(process.env.NEXT_PUBLIC_BACKEND);
             // getDetails();
             setSocket(_socket);
         }
@@ -73,17 +72,22 @@ const Lobby = (params) => {
             try {
                 // Make API call to get game data
                 const gameData = await getRoomById(roomId);
-                const { screen, admin } = gameData;
+                const { screen, admin, rounds, actTime, customWords, startEnd, curr_round, timerLeft } = gameData;
                 console.log(screen);
                 console.log(game.screen);
                 const { players } = await get_players(roomId);
                 // Dispatch action to update game state in Redux
                 dispatch(setAllPlayers(players));
                 dispatch(setadmin(admin));
+                dispatch(setRounds(rounds));
+                dispatch(setactTime(actTime));
+                dispatch(setCustomWords(customWords));
+                dispatch(setStartEnd(startEnd));
+                dispatch(setRound(curr_round));
+                dispatch(setTimerLeft(timerLeft));
+
                 if (screen === "lobby") { dispatch(showLobby()); }
                 else { dispatch(showGame()); }
-
-                // dispatch(setRound(4));
 
 
                 // console.log(game);
@@ -113,38 +117,62 @@ const Lobby = (params) => {
     const deleteplayer = (userId, username) => {
         console.log("Player removed");
         dispatch(removePlayer(userId));
+        dispatch(setCorrects(Math.max(game.corrects - 1, 0)));
         dispatch(addMessage({
             type: "left",
             message: `${username} left the game.`
         }));
     };
 
-    const setGameRounds = (val) => {
+    const setGameRounds = (val, emit = true) => {
         dispatch(setRounds(val));
-        if (emit)
+        if (emit) {
             socket.emit(`set:rounds`, {
-                roomid: roomId,
+                roomId: roomId,
                 rounds: val,
             });
-    };
-    
-    const setGameActTime = (val) => {
-        dispatch(setactTime(val));
-        if (emit)
-            socket.emit(`set:rounds`, {
-                roomid: roomId,
-                rounds: val,
-            });
+        }
     };
 
-    const setCustomWords = (val, emit = true) => {
-        dispatch(set_customWords(val));
-        if (emit)
-            socket.emit(`game:set:customWords`, {
-                id: gameId,
-                customWords: val,
+    const setGameActTime = (time, emit = true) => {
+        console.log("setting act time");
+        dispatch(setactTime(time));
+        dispatch(setStartEnd({ start: 0, end: time }))
+        if (emit) {
+            socket.emit('set:time', {
+                roomId: roomId,
+                time: time,
             });
+        }
     };
+
+    const startGame = () => {
+        if (game.players.length < 2) return;
+        socket.emit(`set:start`, {
+            roomId: roomId,
+        });
+    };
+
+    const kickPlayer = (userId) => {
+        if (game.players.length < 2) return;
+        socket.emit(`set:kick`, {
+            kickedId: userId,
+            ownerId: user.id,
+            roomId: roomId,
+            kickedUsername : user.username
+        });
+    };
+
+    const addWords = (word, emit = true) => {
+        dispatch(setCustomWords(word));
+        if (emit) {
+            socket.emit(`set:customword`, {
+                roomid: roomId,
+                word: word,
+            });
+        }
+    };
+
 
     // // add code to add user image on socket info
     useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
@@ -153,14 +181,32 @@ const Lobby = (params) => {
         socket.emit('join-room', roomId, user.id, user.username || localStorage.getItem("username"));
 
         socket.on("user-connected", (data) => {
-            console.log(data);
             addplayer(data);
-        })
+        });
 
         socket.on("user-disconnected", ({ userId, username }) => {
-
             deleteplayer(userId, username);
-        })
+        });
+
+        socket.on("new:rounds", ({ rounds }) => {
+            setGameRounds(rounds, false);
+        });
+
+        socket.on("new:time", ({ time }) => {
+            console.log("new time")
+            setGameActTime(time, false);
+        });
+        socket.on("new:customword", ({ word }) => {
+            addWords(word, false);
+        });
+        socket.on("new:start", () => {
+            dispatch(showGame());
+        });
+
+        socket.on("new:kicked", () => {
+            alert("You have been kicked");
+            push("/");
+        });
 
         socket.on("new-message", (data) => {
             console.log(data);
@@ -208,7 +254,7 @@ const Lobby = (params) => {
                                 />
                                 <Inputs
                                     title="Act time in seconds"
-                                    value={game.drawTime}
+                                    value={game.actTime}
                                     disabled={!isCreator}
                                     onChange={(val) => {
                                         if (!isCreator) return;
@@ -227,7 +273,7 @@ const Lobby = (params) => {
                                     placeholder="Type your custom words here separated by comma."
                                     onChange={(e) => {
                                         if (!isCreator) return;
-                                        setCustomWords(e.target.value);
+                                        addWords(e.target.value);
                                     }}
                                 />
                                 <button
@@ -251,9 +297,7 @@ const Lobby = (params) => {
                                     key={player.id}
                                 >
                                     <div
-                                        onClick={() => {
-                                            console.log("kick");
-                                        }}
+                                        onClick={() => kickPlayer(player.id)}
                                     >
                                         <Avatar seed={player.username} alt={player.id} />
                                     </div>
