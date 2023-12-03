@@ -309,7 +309,7 @@ const Lobby = (params) => {
                                             {player.id === user.id && (
                                                 <div className="text-yellow-300">You</div>
                                             )}
-                                            {isCreator && (
+                                            {isCreator && player.id === user.id && (
                                                 <div className="text-yellow-300">Admin</div>
                                             )}
                                         </div>

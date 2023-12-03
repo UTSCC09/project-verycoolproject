@@ -90,7 +90,7 @@ const AssignNewAdmin = async (io, roomId) => {
 
 const removePlayer = async (socket, roomId, userId, username) => {
   console.log("disconnected")
-  socket.to(roomId).emit('user-disconnected', { userId: userId, username: username })
+  io.to(roomId).emit('user-disconnected', { userId: userId, username: username })
   try {
     const room = await Room.findById(roomId);
     if (room) {
@@ -103,7 +103,7 @@ const removePlayer = async (socket, roomId, userId, username) => {
           const new_owner = await AssignNewAdmin(io, roomId);
           if (new_owner) {
             console.log("new admin assigned " + new_owner);
-            io.to(new_owner).emit("set:admin"); // sedn prove essage to the new admin only
+            io.to(new_owner).emit("set:admin"); // set message to the new admin only
             room.admin = new_owner;
             io.to(roomId).emit('new:admin', { username: username, message: "Is the New Admin!", type: "join" });
           }
@@ -144,6 +144,19 @@ const setRoomOwner = async (socket, roomId) => {
 };
 
 
+const setUserSocketId = async (socketId, userId) => {
+  try {
+    await User.findByIdAndUpdate(userId, { socketId: socketId });
+    console.log("set the user socket id");
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return;
+  }
+
+};
+
+
+
 io.on(`connection`, socket => {
 
   socket.on('join-room', (roomId, userId, username) => {
@@ -154,6 +167,9 @@ io.on(`connection`, socket => {
       io.to(socket.id).emit("set:admin");
       setRoomOwner(socket, roomId)
     }
+
+    // set socket id of the user in user db
+    setUserSocketId(socket.id, userId)
 
 
     socket.join(roomId)
@@ -240,14 +256,18 @@ io.on(`connection`, socket => {
 
   socket.on('set:customword', async (data) => {
     const { word, roomId } = data;
-    socket.broadcast.to(roomId).emit('new:customword', { word: word });
 
     try {
       const room = await Room.findOne({ _id: roomId });
-
       if (room) {
-        room.customWords.push(word);
-        await room.save();
+
+        if (room.admin === socket.id) {
+          socket.broadcast.to(roomId).emit('new:customword', { word: word });
+          room.customWords.push(word);
+          await room.save();
+        }
+
+
 
       }
     } catch (error) {
@@ -264,9 +284,15 @@ io.on(`connection`, socket => {
     try {
       const room = await Room.findOne({ _id: roomId });
       if (room) {
-        console.log("kick from  Room ID: " + roomId + "user kciked =" + kickedId);
         if (room.admin === socket.id) {
-          removePlayer(socket, roomId, userId, kickedUsername);
+          console.log("kick from  Room ID: " + roomId + "user kciked =" + kickedId);
+          removePlayer(socket, roomId, kickedId, kickedUsername);
+          const user = await User.findById(kickedId)
+          console.log(user)
+          if (user) {
+            io.to(user.socketId).emit('new:kicked');
+          }
+
         }
       }
     } catch (error) {

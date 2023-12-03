@@ -12,6 +12,11 @@ const userSchema = new Schema({
         type: Number,
         default: 0,
     },
+    socketId:
+    {
+        type: String,
+        default: "",
+    },
     room: { type: SchemaTypes.ObjectId, ref: 'Room' },
     rank: {
         type: Number,
