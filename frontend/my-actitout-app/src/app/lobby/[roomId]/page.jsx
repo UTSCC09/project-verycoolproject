@@ -9,7 +9,7 @@ import Game from "./game"
 
 
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
-
+import "./lobby.css"
 
 import {
     clearGameState,
@@ -295,11 +295,12 @@ const Lobby = (params) => {
                                 <div className="grid grid-cols-2 md:grid-cols-5">
                                     {game.players.map((player) => (
                                         <div
-                                            className="flex flex-col text-white text-sm text-center cursor-pointer"
+                                            className={"flex flex-col text-white text-sm text-center"}
                                             key={player.id}
                                         >
                                             <div
-                                                onClick={() => kickPlayer(player.id, player.username)}
+                                                onClick={() => isCreator && player.id !== user.id && kickPlayer(player.id, player.username)}
+                                                className={"cursor-pointer " + (isCreator && player.id !=user.id ? "kickable-avatar" : "")}
                                             >
                                                 <Avatar seed={player.username} alt={player.id} />
                                             </div>
@@ -323,8 +324,9 @@ const Lobby = (params) => {
                             <HoverableDiv link={`${process.env.NEXT_PUBLIC_FRONTEND}/?id=${roomId}`} />
                         </div>
                     </div >
-                )}
-            </div>
+                )
+                }
+            </div >
 
         );
     } else {
