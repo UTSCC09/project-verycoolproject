@@ -74,7 +74,7 @@ export default function Game(props) {
                 socket.emit("round-end", { roomId: roomId, players: game.players })
             }
         }
-        socket.emit('message', { message: message, roomId: roomId });
+        socket.emit('message', { message: message, type: "normal", username: user.username, roomId: roomId });
         // socket.emit('new-round', { message: message, roomId: roomId });
         // socket.emit("message", message);
         setMessage("");
@@ -177,6 +177,14 @@ export default function Game(props) {
             }
         })
 
+        socket.on("new-message", (data) => {
+            console.log(data);
+            let div = document.createElement("div");
+            div.className = getMessageColor(data.type);
+            div.innerHTML = `${data.type === "normal" ? `${data.username}: ${data.message}` : `${data.message}`}`;
+            document.getElementById("messages").appendChild(div);
+        })
+
         return () => {
             socket.off("new-message");
             socket.off("new-word");
@@ -255,11 +263,11 @@ export default function Game(props) {
 
                 <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
                     <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">
-                        {game.messages.map((msg) => (
+                        {/* {game.messages.map((msg) => (
                             <div className={getMessageColor(msg.type)} key={msg.message}>
                                 {msg.type === "normal" ? `${msg.username}: ` : ""} {msg.message}
                             </div>
-                        ))}
+                        ))} */}
                     </div>
                     <input
                         className="w-full border border-gray rounded px-2 mb-2"
