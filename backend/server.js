@@ -29,7 +29,7 @@ connectToMongoDB();
 
 const io = new socketIO(server, {
   cors: {
-    origin: process.env.NEXT_PUBLIC_FRONTEND,
+    origin: "*",
     methods: "*",
   },
 });
@@ -316,14 +316,27 @@ io.on(`connection`, socket => {
 
   })
 
-  socket.on('round-end', (data) => {
+  socket.on('round-end', async (data) => {
     const { roomId, players } = data
-    console.log('round-end')
-    io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
-    const randomIndex = Math.floor(Math.random() * players.length)
-    const currentDate = new Date();
-    io.to(roomId).emit('new-round', { player: players[randomIndex].id, endTimer: currentDate.getSeconds() + 60 });
-    console.log('new word sent')
+    try {
+      const room = await Room.findOne({ _id: roomId });
+      if (room) {
+        if (room.admin === socket.id) {
+          console.log('round-end')
+          io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+          const randomIndex = Math.floor(Math.random() * players.length)
+          const currentDate = new Date();
+          const endTime = currentDate.getTime() + room.actTime*1000;
+          io.to(roomId).emit('new-round', { player: players[randomIndex].id, endTimer: endTime });
+          console.log('new word sent')
+          room.timerLeft = endTime;
+          await room.save();
+        }
+      }
+    } catch (error) {
+      console.error('Error starting new rounds', error);
+    }
+    
   })
 })
 
