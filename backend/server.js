@@ -29,7 +29,7 @@ connectToMongoDB();
 
 const io = new socketIO(server, {
   cors: {
-    origin: process.env.FRONTEND,
+    origin: process.env.NEXT_PUBLIC_FRONTEND,
     methods: "*",
   },
 });
@@ -327,7 +327,7 @@ io.on(`connection`, socket => {
           io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
           const randomIndex = Math.floor(Math.random() * players.length)
           const currentDate = new Date();
-          const endTime = currentDate.getTime() + (room.actTime+2)*1000;
+          const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
           io.to(roomId).emit('new-round', { player: players[randomIndex].id, endTimer: endTime });
           console.log('new word sent')
           room.endTime = endTime;
@@ -337,7 +337,7 @@ io.on(`connection`, socket => {
     } catch (error) {
       console.error('Error starting new rounds', error);
     }
-    
+
   })
 })
 
