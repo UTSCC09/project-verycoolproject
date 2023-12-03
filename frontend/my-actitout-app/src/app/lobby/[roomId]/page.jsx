@@ -124,22 +124,12 @@ const Lobby = (params) => {
     const addplayer = (player) => {
         console.log("Player added");
         dispatch(addPlayer(player));
-        dispatch(
-            addMessage({
-                type: "join",
-                message: `${player.username} joined the game.`,
-            })
-        );
     };
 
     const deleteplayer = (userId, username) => {
         console.log("Player removed");
         dispatch(removePlayer(userId));
         dispatch(setCorrects(Math.max(game.corrects - 1, 0)));
-        dispatch(addMessage({
-            type: "left",
-            message: `${username} left the game.`
-        }));
     };
 
     const setGameRounds = (val, emit = true) => {
@@ -165,7 +155,7 @@ const Lobby = (params) => {
     };
 
     const startGame = () => {
-        if (game.players.length < 2) return;
+        if (game.players.length < 0) return;
         socket.emit(`set:start`, {
             roomId: roomId,
         });
@@ -229,19 +219,6 @@ const Lobby = (params) => {
             console.log("i am the new admin");
             setCreator(true);
         });
-
-        socket.on("new-message", (data) => {
-            console.log(data);
-            const { type, username, message } = data;
-            dispatch(
-                addMessage({
-                    type: type,
-                    username: username,
-                    message: message,
-                })
-            );
-        })
-
         return () => {
             socket.off("new_message");
         };

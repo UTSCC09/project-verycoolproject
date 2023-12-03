@@ -167,6 +167,7 @@ io.on(`connection`, socket => {
       rank: 0,
       correct: 0,
     });
+    io.to(roomId).emit('new-message', { username: "", message: `${username} joined the game`, type: "join" });
 
 
     socket.on('join-game', (roomId, userId) => {
@@ -276,12 +277,12 @@ io.on(`connection`, socket => {
 
   // Listening for a message event 
   socket.on('message', (data) => {
-    const { message, roomId, username } = data;
+    const { message, type, username, roomId } = data;
     console.log(message)
     console.log(roomId)
     console.log(username)
 
-    io.to(roomId).emit('new-message', { username: username, message: message, type: "" });
+    io.to(roomId).emit('new-message', { username: username, message: message, type: type });
     console.log('message sent')
   })
 
