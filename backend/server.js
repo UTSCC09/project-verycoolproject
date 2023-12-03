@@ -320,26 +320,38 @@ io.on(`connection`, socket => {
         { $addToSet: { correctPlayers: userId } },
         { new: true }
       );
-  
+
       if (room) {
         if (room.correctPlayers.length >= room.players.length - 1) {
 
-          // Reset correctPlayers array to empty
-          room.correctPlayers = [];
-          await room.save();
-          console.log(`Reset correctPlayers in room ${roomId}`);
-
-          // New round logic
           try {
-                console.log('Starting new round...')
-                io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
-                const randomIndex = Math.floor(Math.random() * players.length)
-                const currentDate = new Date();
-                const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
-                io.to(roomId).emit('new-round', { player: players[randomIndex].id, endTimer: endTime });
-                console.log('new word sent, current player: '+ players[randomIndex].username)
-                room.endTime = endTime;
-                await room.save();
+            room.curr_round += 1;
+            room.correctPlayers = [];
+
+            if (room.curr_round > room.rounds) { 
+              // Game end logic
+              room.screen = "lobby"
+              room.word = ""
+              room.curr_round = 0
+              await room.save();
+              io.to(roomId).emit('game-end');
+              return;
+            }
+            // Next round logic
+            console.log('Starting new round...')
+            io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+            const currentDate = new Date();
+            const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
+            let currentPlayer = null;
+            if (room.curr_round == 0){
+              currentPlayer = room.players[0]
+            } else {
+              currentPlayer = room.players[(room.curr_round - 1) % (room.players.length)]
+            }
+            io.to(roomId).emit('new-round', { player: currentPlayer._id, endTimer: endTime, round: room.curr_round });
+            console.log('new word sent, current player: ' + currentPlayer._id)
+            room.endTime = endTime;
+            await room.save();
           } catch (error) {
             console.error('Error starting new rounds', error);
           }
@@ -353,20 +365,35 @@ io.on(`connection`, socket => {
   });
 
   socket.on('round-end', async (data) => {
-    const { roomId, players } = data
+    const { roomId } = data
+    const room = await Room.findById(roomId)
     try {
-      const room = await Room.findOne({ _id: roomId });
-      if (room) {
-          console.log('Starting new round...')
-          io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
-          const randomIndex = Math.floor(Math.random() * players.length)
-          const currentDate = new Date();
-          const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
-          io.to(roomId).emit('new-round', { player: players[randomIndex].id, endTimer: endTime });
-          console.log('new word sent, current player: '+ players[randomIndex].username)
-          room.endTime = endTime;
-          await room.save();
+      room.curr_round += 1;
+      room.correctPlayers = [];
+
+      if (room.curr_round > room.rounds) { 
+        // Game end logic
+        room.screen = "lobby"
+        room.word = ""
+        room.curr_round = 0
+        await room.save();
+        io.to(roomId).emit('game-end');
+        return;
       }
+      // Next round logic
+      io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+      const currentDate = new Date();
+      const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
+      let currentPlayer = null;
+      if (room.curr_round == 0){
+        currentPlayer = room.players[0]
+      } else {
+        currentPlayer = room.players[(room.curr_round - 1) % (room.players.length)]
+      }
+      io.to(roomId).emit('new-round', { player: currentPlayer._id, endTimer: endTime, round: room.curr_round });
+      console.log('new word sent, current player: ' + currentPlayer._id)
+      room.endTime = endTime;
+      await room.save();
     } catch (error) {
       console.error('Error starting new rounds', error);
     }

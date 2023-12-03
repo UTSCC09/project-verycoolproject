@@ -13,7 +13,7 @@ const RoomSchema = new Schema({
     },
     curr_round: {
         type: Number,
-        default: 1,
+        default: 0,
     },
     actTime: {
         type: Number,

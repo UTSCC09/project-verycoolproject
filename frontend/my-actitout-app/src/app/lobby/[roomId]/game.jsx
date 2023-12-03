@@ -4,10 +4,11 @@ import React, { useEffect, useState, useRef } from "react";
 import { Avatar, Logo } from "../../../components";
 
 import { VideoStream } from "../../../components/VideoStream/VideoStream"
-import { setStartEnd, setWord, setCorrects } from "../../../store/GameRoom/gameRoomSlice";
+import { setStartEnd, setWord, setCorrects, showLobby, setRound } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import { Peer } from "peerjs"
+
 
 
 export default function Game(props) {
@@ -43,7 +44,7 @@ export default function Game(props) {
             const curr = new Date().getTime();
             const seconds = Math.floor((endTimer - curr)/1000);
             if (seconds < 0) {
-                socket.emit("round-end", { roomId: roomId, players: game.players })
+                socket.emit("round-end", { roomId: roomId })
                 clear();
             } else {
                 //console.log(seconds);
@@ -65,7 +66,7 @@ export default function Game(props) {
 
     const sendMessage = () => {
         if (message == game.word) {
-            socket.emit('correct-guess', { roomId: roomId, userId: user.id, players: game.players })
+            socket.emit('correct-guess', { roomId: roomId, userId: user.id })
             // if (game.corrects >= game.players.length - 1) {
             //     socket.emit("round-end", { roomId: roomId, players: game.players })
             // }
@@ -158,9 +159,14 @@ export default function Game(props) {
             dispatch(setWord(data));
         })
 
+        socket.on("game-end", (data) => {
+            dispatch(showLobby());
+        })
+
         socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
-            console.log("new round");
-            const { player, endTimer } = data
+            console.log("New round started");
+            const { player, endTimer, round } = data
+            dispatch(setRound(round))
             currentPlayerId = player;
             switchVideo(currentPlayerId);
             startCountdown(endTimer);
@@ -193,7 +199,7 @@ export default function Game(props) {
 
     useEffect(() => { // If a player disconnects, we need to check if the next round should start
         if (game.corrects >= game.players.length - 1) {
-            socket.emit("round-end", { roomId: roomId, players: game.players })
+            socket.emit("round-end", { roomId: roomId })
         }
     }, [game.players])
 
