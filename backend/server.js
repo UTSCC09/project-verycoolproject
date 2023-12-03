@@ -126,7 +126,6 @@ const removePlayer = async (socket, roomId, userId, username) => {
   }
 };
 
-
 const setRoomOwner = async (socket, roomId) => {
   console.log("first person =" + socket.id);
 
@@ -305,39 +304,72 @@ io.on(`connection`, socket => {
   // Listening for a message event 
   socket.on('message', (data) => {
     const { message, type, username, roomId } = data;
-    console.log(message)
-    console.log(roomId)
-    console.log(username)
+    console.log("Message: " + message + " | Room ID: " + roomId + " | Username: " + username)
 
     io.to(roomId).emit('new-message', { username: username, message: message, type: type });
-    console.log('message sent')
+    //console.log('message sent')
   })
 
-  socket.on('correct-guess', (data) => {
+  socket.on('correct-guess', async (data) => {
+    const { roomId, userId, players } = data;
+    console.log("Correct guess in room " + roomId);
+  
+    try {
+      const room = await Room.findByIdAndUpdate(
+        roomId,
+        { $addToSet: { correctPlayers: userId } },
+        { new: true }
+      );
+  
+      if (room) {
+        if (room.correctPlayers.length >= room.players.length - 1) {
 
-  })
+          // Reset correctPlayers array to empty
+          room.correctPlayers = [];
+          await room.save();
+          console.log(`Reset correctPlayers in room ${roomId}`);
+
+          // New round logic
+          try {
+                console.log('Starting new round...')
+                io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+                const randomIndex = Math.floor(Math.random() * players.length)
+                const currentDate = new Date();
+                const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
+                io.to(roomId).emit('new-round', { player: players[randomIndex].id, endTimer: endTime });
+                console.log('new word sent, current player: '+ players[randomIndex].username)
+                room.endTime = endTime;
+                await room.save();
+          } catch (error) {
+            console.error('Error starting new rounds', error);
+          }
+        }
+      } else {
+        console.log('Room not found');
+      }
+    } catch (error) {
+      console.error('Error updating room:', error);
+    }
+  });
 
   socket.on('round-end', async (data) => {
     const { roomId, players } = data
     try {
       const room = await Room.findOne({ _id: roomId });
       if (room) {
-        if (room.admin === socket.id) {
-          console.log('round-end')
+          console.log('Starting new round...')
           io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
           const randomIndex = Math.floor(Math.random() * players.length)
           const currentDate = new Date();
           const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
           io.to(roomId).emit('new-round', { player: players[randomIndex].id, endTimer: endTime });
-          console.log('new word sent')
+          console.log('new word sent, current player: '+ players[randomIndex].username)
           room.endTime = endTime;
           await room.save();
-        }
       }
     } catch (error) {
       console.error('Error starting new rounds', error);
     }
-
   })
 })
 

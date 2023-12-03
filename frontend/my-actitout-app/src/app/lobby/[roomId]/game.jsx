@@ -43,7 +43,6 @@ export default function Game(props) {
             const curr = new Date().getTime();
             const seconds = Math.floor((endTimer - curr)/1000);
             if (seconds < 0) {
-                console.log("here");
                 socket.emit("round-end", { roomId: roomId, players: game.players })
                 clear();
             } else {
@@ -65,12 +64,11 @@ export default function Game(props) {
     };
 
     const sendMessage = () => {
-        if (message === game.word) {
-            console.log('correct')
-            socket.emit('correct-guess', { roomId: roomId })
-            if (game.corrects >= game.players.length) {
-                socket.emit("round-end", { roomId: roomId, players: game.players })
-            }
+        if (message == game.word) {
+            socket.emit('correct-guess', { roomId: roomId, userId: user.id, players: game.players })
+            // if (game.corrects >= game.players.length - 1) {
+            //     socket.emit("round-end", { roomId: roomId, players: game.players })
+            // }
         }
         socket.emit('message', { message: message, type: "normal", username: user.username, roomId: roomId });
         // socket.emit('new-round', { message: message, roomId: roomId });
@@ -91,7 +89,7 @@ export default function Game(props) {
         call.on('stream', userVideoStream => {
             addVideoStream(video, userVideoStream);
             streams[userId] = userVideoStream;
-            console.log("Set stream of: " + userId + " to " + streams[userId])
+            console.log("Initialized stream of: " + userId)
         });
         call.on('close', () => {
             video.remove();
@@ -168,12 +166,13 @@ export default function Game(props) {
             startCountdown(endTimer);
         })
 
-        socket.on("update-correct-guess", (data) => {
-            dispatch(setCorrects(game.corrects + 1));
-            if (game.corrects >= game.players.length) {
-                socket.emit("round-end", { roomId: roomId, players: game.players })
-            }
-        })
+        // socket.on("update-correct-guess", () => {
+        //     dispatch(setCorrects(game.corrects + 1));
+        //     console.log("Corrects so far: " + game.corrects +"/"+game.players.length );
+        //     if (game.corrects >= game.players.length) {
+        //         socket.emit("round-end", { roomId: roomId, players: game.players })
+        //     }
+        // })
 
         socket.on("new-message", (data) => {
             console.log(data);
@@ -193,7 +192,7 @@ export default function Game(props) {
 
 
     useEffect(() => { // If a player disconnects, we need to check if the next round should start
-        if (game.corrects >= game.players.length) {
+        if (game.corrects >= game.players.length - 1) {
             socket.emit("round-end", { roomId: roomId, players: game.players })
         }
     }, [game.players])

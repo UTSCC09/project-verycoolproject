@@ -41,6 +41,10 @@ const RoomSchema = new Schema({
         default: '',
     },
     turn: { type: SchemaTypes.ObjectId, ref: 'User' },
+    correctPlayers: {
+        type: Array,
+        default: [],
+    },
     startEnd: {
         type: {
             start: {
