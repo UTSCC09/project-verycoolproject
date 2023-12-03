@@ -36,7 +36,10 @@ const RoomSchema = new Schema({
         default: 0,
     },
     players: [{ type: SchemaTypes.ObjectId, ref: 'User' }],
-    admin: { type: SchemaTypes.ObjectId, ref: 'User' },
+    admin: {
+        type: String,
+        default: '',
+    },
     turn: { type: SchemaTypes.ObjectId, ref: 'User' },
     startEnd: {
         type: {

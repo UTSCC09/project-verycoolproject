@@ -47,8 +47,9 @@ const Lobby = (params) => {
     const user = useSelector(selectUserState);
     const game = useSelector(selectGameState);
 
-    const { push, back, replace } = useRouter();
     const [loading, setLoading] = useState(true);
+    const [isCreator, setCreator] = useState(false);
+    const { push, back, replace } = useRouter();
     useEffect(() => {
         console.log(document.cookie);
     }, [])
@@ -56,20 +57,24 @@ const Lobby = (params) => {
 
     const [socket, setSocket] = useState();
 
-    useEffect(() => {
-        // const roomId = location;
-        if (roomId) {
-            const _socket = io(process.env.NEXT_PUBLIC_BACKEND);
-            // getDetails();
-            setSocket(_socket);
-        }
-    }, []);
+    // useEffect(() => {
+    //     const initializeSocket = async () => {
+    //         if (roomId) {
+    //             const _socket = await io(process.env.NEXT_PUBLIC_BACKEND);
+    //             setSocket(_socket);
+    //             // setLoading(false);
+    //         }
+    //     };
+    //     initializeSocket();
+    // }, [roomId]);
 
 
 
     useEffect(() => {
         const fetchData = async () => {
             try {
+
+
                 // Make API call to get game data
                 const gameData = await getRoomById(roomId);
                 const { screen, admin, rounds, actTime, customWords, startEnd, curr_round, timerLeft } = gameData;
@@ -89,17 +94,30 @@ const Lobby = (params) => {
                 if (screen === "lobby") { dispatch(showLobby()); }
                 else { dispatch(showGame()); }
 
-
-                // console.log(game);
-                // Set loading to false when data is fetched
-                setLoading(false);
             } catch (error) {
                 console.error('Error fetching game data:', error);
             }
         };
 
-        // Call fetchData when the component mounts
-        fetchData();
+        const initializeSocket = async () => {
+            if (roomId) {
+                const _socket = await io(process.env.NEXT_PUBLIC_BACKEND);
+                setSocket(_socket);
+            }
+        };
+        const initializeData = async () => {
+            try {
+                await Promise.all([initializeSocket(), fetchData()]);
+            } finally {
+                // setLoading(false) here in case of success or error
+                console.log(game);
+                console.log(socket);
+                setLoading(false);
+            }
+        };
+
+        initializeData();
+
     }, [roomId]);
 
 
@@ -153,13 +171,12 @@ const Lobby = (params) => {
         });
     };
 
-    const kickPlayer = (userId) => {
+    const kickPlayer = (userId, username) => {
         if (game.players.length < 2) return;
         socket.emit(`set:kick`, {
             kickedId: userId,
-            ownerId: user.id,
             roomId: roomId,
-            kickedUsername : user.username
+            kickedUsername: username
         });
     };
 
@@ -208,6 +225,11 @@ const Lobby = (params) => {
             push("/");
         });
 
+        socket.on("set:admin", () => {
+            console.log("i am the new admin");
+            setCreator(true);
+        });
+
         socket.on("new-message", (data) => {
             console.log(data);
             const { type, username, message } = data;
@@ -225,102 +247,108 @@ const Lobby = (params) => {
         };
     }, [socket]);
 
-    const isCreator = useMemo(() => {
-        return game.admin === user.id;
-    }, [game.admin, user.id]);
+
+
 
 
     if (game.screen === "lobby") {
         return (
-            <div className="h-full">
-                <div className="h-32"></div>;
-                <div className="bg-blue-300 flex justify-between">
-                    <div className="w-1/2 md:w-5/12">
-                        <h2 className="text-white text-3xl text-center mb-2">
-                            Settings
-                        </h2>
-                        <div className="bg-white">
-                            <h3 className="border-b text-2xl text-center py-1">Lobby</h3>
-                            <div className="p-3">
-                                <Inputs
-                                    title="Rounds"
-                                    value={game.rounds}
-                                    disabled={!isCreator}
-                                    onChange={(val) => {
-                                        if (!isCreator) return;
-                                        setGameRounds(val);
-                                    }}
-                                    options={[2, 3, 4, 5, 6]}
-                                />
-                                <Inputs
-                                    title="Act time in seconds"
-                                    value={game.actTime}
-                                    disabled={!isCreator}
-                                    onChange={(val) => {
-                                        if (!isCreator) return;
-                                        setGameActTime(val);
-                                    }}
-                                    options={Array.from(
-                                        { length: 16 },
-                                        (v, i) => i * 10 + 30
-                                    )}
-                                />
-                                <label className="block font-bold text-sm mb-1">Custom Words</label>
-                                <textarea
-                                    value={game.customWords}
-                                    disabled={!isCreator}
-                                    className="w-full rounded px-3 py-1 border border-gray-400 mb-3"
-                                    placeholder="Type your custom words here separated by comma."
-                                    onChange={(e) => {
-                                        if (!isCreator) return;
-                                        addWords(e.target.value);
-                                    }}
-                                />
-                                <button
-                                    disabled={!isCreator}
-                                    className="block bg-green-500 hover:bg-green-600 disabled:opacity-50 w-full text-white rounded h-10"
-                                    onClick={() => startGame()}
-                                >
-                                    Start Game
-                                </button>
+            <div>
+                {loading ? (
+                    <p>Loading...</p>
+                ) : (
+                    <div className="h-full">
+                        <div className="h-32"></div>;
+                        <div className="bg-blue-300 flex justify-between">
+                            <div className="w-1/2 md:w-5/12">
+                                <h2 className="text-white text-3xl text-center mb-2">
+                                    Settings
+                                </h2>
+                                <div className="bg-white">
+                                    <h3 className="border-b text-2xl text-center py-1">Lobby</h3>
+                                    <div className="p-3">
+                                        <Inputs
+                                            title="Rounds"
+                                            value={game.rounds}
+                                            disabled={!isCreator}
+                                            onChange={(val) => {
+                                                if (!isCreator) return;
+                                                setGameRounds(val);
+                                            }}
+                                            options={[2, 3, 4, 5, 6]}
+                                        />
+                                        <Inputs
+                                            title="Act time in seconds"
+                                            value={game.actTime}
+                                            disabled={!isCreator}
+                                            onChange={(val) => {
+                                                if (!isCreator) return;
+                                                setGameActTime(val);
+                                            }}
+                                            options={Array.from(
+                                                { length: 16 },
+                                                (v, i) => i * 10 + 30
+                                            )}
+                                        />
+                                        <label className="block font-bold text-sm mb-1">Custom Words</label>
+                                        <textarea
+                                            value={game.customWords}
+                                            disabled={!isCreator}
+                                            className="w-full rounded px-3 py-1 border border-gray-400 mb-3"
+                                            placeholder="Type your custom words here separated by comma."
+                                            onChange={(e) => {
+                                                if (!isCreator) return;
+                                                addWords(e.target.value);
+                                            }}
+                                        />
+                                        <button
+                                            disabled={!isCreator}
+                                            className="block bg-green-500 hover:bg-green-600 disabled:opacity-50 w-full text-white rounded h-10"
+                                            onClick={() => startGame()}
+                                        >
+                                            Start Game
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="w-1/2 md:w-5/12">
+                                <h2 className="text-white text-3xl text-center mb-2">
+                                    Players
+                                </h2>
+                                <div className="grid grid-cols-2 md:grid-cols-5">
+                                    {game.players.map((player) => (
+                                        <div
+                                            className="flex flex-col text-white text-sm text-center cursor-pointer"
+                                            key={player.id}
+                                        >
+                                            <div
+                                                onClick={() => kickPlayer(player.id, player.username)}
+                                            >
+                                                <Avatar seed={player.username} alt={player.id} />
+                                            </div>
+                                            <div className="mt-2 sm:text-sm md:text-xl">
+                                                {player.username}
+                                            </div>
+                                            {player.id === user.id && (
+                                                <div className="text-yellow-300">You</div>
+                                            )}
+                                            {isCreator && (
+                                                <div className="text-yellow-300">Admin</div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div className="w-1/2 md:w-5/12">
-                        <h2 className="text-white text-3xl text-center mb-2">
-                            Players
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-5">
-                            {game.players.map((player) => (
-                                <div
-                                    className="flex flex-col text-white text-sm text-center cursor-pointer"
-                                    key={player.id}
-                                >
-                                    <div
-                                        onClick={() => kickPlayer(player.id)}
-                                    >
-                                        <Avatar seed={player.username} alt={player.id} />
-                                    </div>
-                                    <div className="mt-2 sm:text-sm md:text-xl">
-                                        {player.username}
-                                    </div>
-                                    {player.id === user.id && (
-                                        <div className="text-yellow-300">You</div>
-                                    )}
-                                    {player.id === game.admin && (
-                                        <div className="text-yellow-300">Admin</div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-6 text-center">
-                    <h1 className="text-4xl text-black">Invite your friends! </h1>
+                        <div className="mt-6 text-center">
+                            <h1 className="text-4xl text-black">Invite your friends! </h1>
 
-                    <HoverableDiv link={`${process.env.FRONTEND}/?id=${roomId}`} />
-                </div>
-            </div >
+                            <HoverableDiv link={`${process.env.NEXT_PUBLIC_FRONTEND}/?id=${roomId}`} />
+                        </div>
+                    </div >
+                )}
+            </div>
+
         );
     } else {
         return <Game socket={socket} roomId={roomId} user={user} />;

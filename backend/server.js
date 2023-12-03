@@ -29,7 +29,7 @@ connectToMongoDB();
 
 const io = new socketIO(server, {
   cors: {
-    origin: process.env.FRONTEND,
+    origin: process.env.NEXT_PUBLIC_FRONTEND,
     methods: "*",
   },
 });
@@ -39,7 +39,7 @@ const users = {};
 
 
 app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", process.env.FRONTEND);
+  res.header("Access-Control-Allow-Origin", process.env.NEXT_PUBLIC_FRONTEND);
   res.header("Access-Control-Allow-Headers", "Content-Type");
   res.header("Access-Control-Allow-Methods", "*");
   next();
@@ -71,10 +71,95 @@ app.use(
 app.use("/room", RoomRoutes);
 app.use("/user", UserRoutes);
 
+
+
+function getRandomRoomOwner(inputSet) {
+  const elementsArray = Array.from(inputSet);
+  return elementsArray.length > 0 ? elementsArray[Math.floor(Math.random() * elementsArray.length)] : null;
+}
+
+const AssignNewAdmin = async (io, roomId) => {
+  const roomSockets = io.sockets.adapter.rooms.get(roomId);
+  if (roomSockets) {
+    const new_owner = getRandomRoomOwner(roomSockets);
+    return new_owner;
+  }
+  return null;
+};
+
+
+const removePlayer = async (socket, roomId, userId, username) => {
+  console.log("disconnected")
+  socket.to(roomId).emit('user-disconnected', { userId: userId, username: username })
+  try {
+    const room = await Room.findById(roomId);
+    if (room) {
+
+      if (room.players.length === 0) {
+        await room.deleteOne({ _id: roomId });
+      }
+      else {
+        if (room.admin === socket.id) {
+          const new_owner = await AssignNewAdmin(io, roomId);
+          if (new_owner) {
+            console.log("new admin assigned " + new_owner);
+            io.to(new_owner).emit("set:admin"); // sedn prove essage to the new admin only
+            room.admin = new_owner;
+            io.to(roomId).emit('new:admin', { username: username, message: "Is the New Admin!", type: "join" });
+          }
+        }
+        // Remove the user from the players array
+        const index = room.players.indexOf(userId);
+        if (index !== -1) {
+          room.players.splice(index, 1);
+        }
+
+        // Save the updated room
+        await room.save();
+      }
+
+      await User.deleteOne({ _id: userId });
+    }
+  } catch (err) {
+    console.log(err)
+  }
+};
+
+
+const setRoomOwner = async (socket, roomId) => {
+  console.log("first person =" + socket.id);
+
+  try {
+    // Find the room by ID
+    await Room.findByIdAndUpdate(
+      roomId,
+      { admin: socket.id },
+    );
+
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return;
+  }
+
+};
+
+
 io.on(`connection`, socket => {
+
   socket.on('join-room', (roomId, userId, username) => {
-    console.log("Room ID: " + roomId + " | User ID: " + userId + " | username " + username)
+    // if the first person is entering a room then sets the as the admin of room 
+    const room = io.sockets.adapter.rooms.get(roomId);
+    if (!room) {
+      console.log("i am the orignal admin")
+      io.to(socket.id).emit("set:admin");
+      setRoomOwner(socket, roomId)
+    }
+
+
     socket.join(roomId)
+
+    console.log("Room ID: " + roomId + " | User ID: " + userId + " | username " + username + " | socketId " + socket.id)
+
     socket.to(roomId).emit('user-connected', {
       id: userId,
       username: username,
@@ -83,42 +168,19 @@ io.on(`connection`, socket => {
       correct: 0,
     });
 
+
     socket.on('join-game', (roomId, userId) => {
 
       console.log(userId + "joined video room")
       socket.to(roomId).emit('user-connected-game', userId)
-  
+
       socket.on('disconnect', () => {
         socket.to(roomId).emit('user-disconnected-game', userId)
       })
     })
 
     socket.on('disconnect', (async () => {
-      console.log("disconnected")
-      try {
-        socket.to(roomId).emit('user-disconnected', { userId: userId, username: username })
-
-        const room = await Room.findById(roomId);
-        if (room) {
-
-          if (room.players.length === 0) {
-            await room.deleteOne({ _id: roomId });
-            return;
-          }
-
-          // Remove the user from the players array
-          const index = room.players.indexOf(userId);
-          if (index !== -1) {
-            room.players.splice(index, 1);
-          }
-          // Save the updated room
-          await room.save();
-
-          await User.deleteOne({ _id: userId });
-        }
-      } catch (err) {
-        console.log(err)
-      }
+      await removePlayer(socket, roomId, userId, username);
     })
     );
   });
@@ -126,38 +188,49 @@ io.on(`connection`, socket => {
   // Listening for a rounds event 
   socket.on('set:rounds', async (data) => {
     const { rounds, roomId } = data;
-    socket.broadcast.to(roomId).emit('new:rounds', { rounds: rounds });
-
     try {
       const room = await Room.findOne({ _id: roomId });
-
       if (room) {
-        room.rounds = rounds;
-        await room.save();
+        if (room.admin === socket.id) {
+          socket.broadcast.to(roomId).emit('new:rounds', { rounds: rounds });
+          room.rounds = rounds;
+          await room.save();
+        }
       }
     } catch (error) {
       console.error('Error setting rounds:', error);
     }
   });
 
-  socket.on('set:start', (data) => {
+  socket.on('set:start', async (data) => {
     const { roomId } = data;
-    io.to(roomId).emit('new:start');
+    try {
+      const room = await Room.findOne({ _id: roomId });
+      if (room) {
+        if (room.admin === socket.id) {
+          io.to(roomId).emit('new:start');
+          room.screen = "game";
+          await room.save();
+        }
+      }
+    } catch (error) {
+      console.error('Error starting the game:', error);
+    }
+
   })
 
 
   socket.on('set:time', async (data) => {
-
     const { time, roomId } = data;
-
-    socket.broadcast.to(roomId).emit('new:time', { time: time });
-
     try {
       const room = await Room.findOne({ _id: roomId });
-
       if (room) {
-        room.actTime = time;
-        await room.save();
+        if (room.admin === socket.id) {
+          socket.broadcast.to(roomId).emit('new:time', { time: time });
+          room.actTime = time;
+          await room.save();
+        }
+
       }
     } catch (error) {
       console.error('Error setting time:', error);
@@ -182,30 +255,18 @@ io.on(`connection`, socket => {
   });
 
 
-
   socket.on('set:kick', async ({
     kickedId,
-    ownerId,
     roomId,
     kickedUsername
   }) => {
     try {
-      const room = await Room.findOne({ _id: roomId, admin: ownerId });
+      const room = await Room.findOne({ _id: roomId });
       if (room) {
-        console.log("kick from  Room ID: " + roomId + "user kciked =" + kickedId, "by owner -" + ownerId);
-        io.to(roomId).to(kickedId).emit('new:kicked');
-        io.to(roomId).emit('user-disconnected', { userId: kickedId, username: kickedUsername })
-
-        // Remove the user from the players array
-        const index = room.players.indexOf(kickedId);
-        if (index !== -1) {
-          room.players.splice(index, 1);
+        console.log("kick from  Room ID: " + roomId + "user kciked =" + kickedId);
+        if (room.admin === socket.id) {
+          removePlayer(socket, roomId, userId, kickedUsername);
         }
-        // Save the updated room
-        await room.save();
-
-        await User.deleteOne({ _id: kickedId });
-        // Update the user's room field
       }
     } catch (error) {
       console.error('Error checking room ownership:', error);

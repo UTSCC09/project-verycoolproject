@@ -4,7 +4,7 @@ import { Room } from "../models/Rooms.js";
 const create_room = async (req, res) => {
     try {
         const { userId } = req.body;
-        const newRoom = new Room({ admin: userId, players: [userId] });
+        const newRoom = new Room({ players: [userId] });
         await newRoom.save();
         res.json({ roomId: newRoom._id });
     } catch (error) {
