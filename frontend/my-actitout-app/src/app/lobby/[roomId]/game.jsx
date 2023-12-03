@@ -26,45 +26,43 @@ export default function Game(props) {
     const videoGrid = useRef(null);
     const peersRef = useRef([]);
     const myPeer = useRef();
-
+    const [countdown, updateCountdown] = useState(0);
+    let activeTimer;
 
     const [message, setMessage] = useState("");
     const dispatch = useDispatch();
 
     let currentPlayerId = null; // This will control who's video is being played
 
-    const useCounter = (endTimeStamp) => {
-        const [timeLeft, setTimeLeft] = useState(0);
+    const startCountdown = (endTimer) => {
+        if (activeTimer) {
+            clearInterval(activeTimer);
+        }
 
-        useEffect(() => {
-            const timer = setInterval(() => {
-                const now = new Date();
-                const nowTimeStamp = now.getTime();
-                const diff = endTimeStamp - nowTimeStamp;
-                const seconds = Math.floor(diff / 1000);
-                if (seconds < 0) {
-                    console.log("here");
-                    socket.emit("round-end", { roomId: roomId, players: game.players })
-                    clear();
-                } else {
-                    //console.log(seconds);
-                    setTimeLeft(seconds);
-                }
-            }, 1000);
-
-            const clear = () => {
-                clearInterval(timer);
-            };
-
-            return () => {
+        const timer = setInterval(() => {
+            const curr = new Date().getTime();
+            const seconds = Math.floor((endTimer - curr)/1000);
+            if (seconds < 0) {
+                console.log("here");
+                socket.emit("round-end", { roomId: roomId, players: game.players })
                 clear();
-            };
-        }, [endTimeStamp]);
+            } else {
+                //console.log(seconds);
+                updateCountdown(seconds);
+            }
+        }, 1000);
 
-        return timeLeft;
+        activeTimer = timer;
+
+        const clear = () => {
+            clearInterval(activeTimer);
+            activeTimer = null;
+        };
+
+        return () => {
+            clear();
+        };
     };
-
-    const timeLeft = useCounter(currentDate)
 
     const sendMessage = () => {
         if (message === game.word) {
@@ -163,11 +161,11 @@ export default function Game(props) {
         })
 
         socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
-            const { endTimer, player } = data
-            //timeLeft = useCounter(endTimer); Needs fix!
+            console.log("new round");
+            const { player, endTimer } = data
             currentPlayerId = player;
             switchVideo(currentPlayerId);
-
+            startCountdown(endTimer);
         })
 
         socket.on("update-correct-guess", (data) => {
@@ -184,6 +182,8 @@ export default function Game(props) {
             div.innerHTML = `${data.type === "normal" ? `${data.username}: ${data.message}` : `${data.message}`}`;
             document.getElementById("messages").appendChild(div);
         })
+
+        startCountdown(new Date().getTime());
 
         return () => {
             socket.off("new-message");
@@ -226,7 +226,7 @@ export default function Game(props) {
 
             <div className="rounded flex items-center bg-blue-50 mb-3 px-5 py-2 font-bold text-gray-600">
                 <div>
-                    {timeLeft} <span className="ml-3">Round {game.curr_round} of {game.rounds}</span>
+                    {countdown} <span className="ml-3">Round {game.curr_round} of {game.rounds}</span>
                 </div>
                 <div className="text-center flex-1 tracking-[3px]">{game.word}</div>
             </div>

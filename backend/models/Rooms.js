@@ -31,7 +31,7 @@ const RoomSchema = new Schema({
         type: String,
         default: '',
     },
-    timerLeft: {
+    endTime: {
         type: Number,
         default: 0,
     },
