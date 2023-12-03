@@ -29,7 +29,7 @@ connectToMongoDB();
 
 const io = new socketIO(server, {
   cors: {
-    origin: "*",
+    origin: process.env.FRONTEND,
     methods: "*",
   },
 });
