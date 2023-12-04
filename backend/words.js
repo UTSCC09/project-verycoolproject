@@ -12,15 +12,15 @@ const words = [
     "Traffic Jam", "Swimming", "Witch", "Cow", "Piano",
     "Jellyfish", "Basketball", "Safari", "Cactus", "Sushi",
     "Elephant March", "Banjo", "Tug of War", "Beehive", "Drummer",
-    "Lighthouse", "Vampire", "Clown", "Mountain Climbing", "Rowing",
+    "Lighthouse", "Vampire", "Clown", "Rowing",
     "Zigzag", "Sitting", "Sailing", "Egg", "Dinosaur", 
     "Singing", "Golf", "Working Out", "Hiking", "Fencing",
     "Rainstorm", "Superhero", "Steal", "Snail", "Beyblade",
     "Ice Cream Cone", "Football", "Sumo Wrestling", "Scuba Diving", "Telescope",
     "Simpsons", "Ocean", "Duck", "Baseball", "Circus",
     "Ninja", "Eagle",
-    "Lifeguard", 
-    "Drumroll", "Avalanche", 
+    "Lifeguard", "Murder", "Among Us", "Squidward", "Avacado", "Global Warming",
+    "Drumroll", "Avalanche", "Order 66",
     "Bumblebee", "Bullying", "Zipline",
     "Tornado", "Tired", "Skiing", "Climbing", "Sewing"
 ];
