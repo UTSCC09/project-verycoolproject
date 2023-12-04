@@ -91,6 +91,7 @@ export default function Game(props) {
             addVideoStream(video, userVideoStream);
             streams[userId] = userVideoStream;
             console.log("Initialized stream of: " + userId)
+            switchVideo(currentPlayerId);
         });
         call.on('close', () => {
             video.remove();
@@ -123,6 +124,7 @@ export default function Game(props) {
             addVideoStream(myVideo.current, stream);
             streams[myPeer.current.id] = stream;
             console.log("Set stream of: " + myPeer.current.id + " to " + streams[myPeer.current.id])
+            switchVideo(currentPlayerId);
             myPeer.current.on('call', call => {
                 call.answer(stream);
                 const video = document.createElement('video');
@@ -130,6 +132,7 @@ export default function Game(props) {
                     addVideoStream(video, userVideoStream);
                     streams[call.peer] = userVideoStream
                     console.log("Set stream of: " + call.peer + " to " + streams[call.peer])
+                    switchVideo(currentPlayerId);
                 });
             });
 
@@ -195,13 +198,6 @@ export default function Game(props) {
             socket.off("new-word");
         };
     }, []);
-
-
-    useEffect(() => { // If a player disconnects, we need to check if the next round should start
-        if (game.corrects >= game.players.length - 1) {
-            socket.emit("round-end", { roomId: roomId })
-        }
-    }, [game.players])
 
 
     // console.log(game.startEnd.end);
