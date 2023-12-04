@@ -59,6 +59,9 @@ export const gameRoomSlice = createSlice({
         addPlayer: (state, action) => {
             state.players.push(action.payload);
         },
+        sortPlayers: (state) => {
+            state.players.sort((a, b) => b.score - a.score);
+        },
         updateScore: (state, action) => {
             const id = action.payload.id;
             const index = state.players.findIndex((player) => player.id === id);
@@ -102,7 +105,8 @@ export const {
     showLobby,
     showGame,
     setTimerLeft,
-    updateScore
+    updateScore,
+    sortPlayers
 } = gameRoomSlice.actions;
 
 // export const selectGameState = (RootState) => RootState.game;

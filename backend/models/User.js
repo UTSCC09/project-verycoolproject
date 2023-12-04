@@ -18,10 +18,6 @@ const userSchema = new Schema({
         default: "",
     },
     room: { type: SchemaTypes.ObjectId, ref: 'Room' },
-    rank: {
-        type: Number,
-        default: 0,
-    },
     correct: {
         type: Number,
         default: 0,

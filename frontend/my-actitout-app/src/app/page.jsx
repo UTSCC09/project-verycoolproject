@@ -88,12 +88,8 @@ const Main = () => {
         //create a room with owner id
         const roomData = await createRoom(userId);
         const { roomId } = roomData
-        addPlayerToRoom(roomId, userId).then(() => {
-          push(`lobby/${roomId}`);
-        })
-        .catch((error) => {
-          console.error(error);
-        });
+        push(`lobby/${roomId}`);
+        console.error(error);
       }
     } catch (err) {
       console.error(err);
@@ -113,11 +109,8 @@ const Main = () => {
       //create a room wiht owner id
       const roomData = await createRoom(userId);
       const { roomId } = roomData
-      addPlayerToRoom(roomId, userId).then(() => {
-        setLoading(false);
-        push(`lobby/${roomId}`);
-      })
-
+      setLoading(false);
+      push(`lobby/${roomId}`);
     } catch (err) {
       console.error(err);
       setLoading(false);

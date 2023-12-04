@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Avatar, Logo } from "../../../components";
 
 import { VideoStream } from "../../../components/VideoStream/VideoStream"
-import { setStartEnd, setWord, setCorrects, showLobby, setRound, updateScore } from "../../../store/GameRoom/gameRoomSlice";
+import { setStartEnd, setWord, setCorrects, showLobby, setRound, updateScore, sortPlayers } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import { getPlayersByRoom } from "@/api/api.mjs";
@@ -85,6 +85,7 @@ export default function Game(props) {
             data.forEach((dbPlayer) => {
                 dispatch(updateScore({ id: dbPlayer._id, score: dbPlayer.score }))
             });
+            dispatch(sortPlayers());
             console.log(game.players);
         })
     }
@@ -254,12 +255,12 @@ export default function Game(props) {
             </div>
             <div className="flex justify-between h-[600px]">
                 <div className="w-3/8  rounded">
-                    {game.players.map((player) => (
+                    {game.players.map((player, index) => (
                         <div
                             className="flex justify-around items-center bg-yellow-50 p-1 border border-b-1 border-white"
                             key={player.id}
                         >
-                            <div className="px-2">#1{player.rank}</div>
+                            <div className="px-2">#{index + 1}</div>
                             <div className="flex-1 text-center">
                                 <div className="font-bold">{player.username}</div>
                                 <div className="text-sm">{`Points: ${player.score}`}</div>
