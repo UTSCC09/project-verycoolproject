@@ -47,7 +47,7 @@ const Main = () => {
   }, [username]);
 
   const playGame = async (event) => {
-    event.preventDefault();
+    // event.preventDefault();
     setLoading(true);
 
     try {

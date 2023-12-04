@@ -37,6 +37,28 @@ export default function Game(props) {
 
     const currentPlayerId = useRef(null); // This will control who's video is being played
 
+
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(max-width: 768px)'); // Adjust the media query as needed
+
+        const handleMediaChange = (event) => {
+            setIsMobile(event.matches);
+        };
+
+        // Initial check
+        handleMediaChange(mediaQuery);
+
+        // Listen for changes in the media query
+        mediaQuery.addListener(handleMediaChange);
+
+        // Clean up the listener when the component unmounts
+        return () => {
+            mediaQuery.removeListener(handleMediaChange);
+        };
+    }, []);
+
     const startCountdown = (endTimer) => {
         if (activeTimer) {
             clearInterval(activeTimer);
@@ -110,7 +132,7 @@ export default function Game(props) {
     }
 
     function switchVideo(userId) {
-        if (userId == null){
+        if (userId == null) {
             console.log("Null user, trying to fetch current player")
             socket.emit('get-current-player', roomId)
         }
@@ -176,20 +198,20 @@ export default function Game(props) {
 
     const cleanupPeers = () => {
         if (myPeer.current) {
-          myPeer.current.destroy();
-          myPeer.current = null;
+            myPeer.current.destroy();
+            myPeer.current = null;
         }
-      
+
         setPeers([]);
         setStreams([]);
-      };
+    };
 
     useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
         //socket.emit('join-room', roomId, user.id);
 
         socket.on("current-player", (data) => {
             console.log("got the current player: " + data)
-            if (currentPlayerId.current == null){
+            if (currentPlayerId.current == null) {
                 currentPlayerId.current = data;
                 switchVideo(currentPlayerId.current);
             }
@@ -269,7 +291,7 @@ export default function Game(props) {
                         </div>
                         {user.id === currentPlayerId.current && (<div className="text-center flex-1 tracking-[3px]">{game.word}</div>)}
                     </div>
-                    <div className="flex justify-between h-[600px]">
+                    <div className={`flex justify-between mb-4 ${!isMobile ? ' h-[600px]' : ''}`}>
                         <div className="w-3/8  rounded">
                             {game.players.map((player, index) => (
                                 <div
@@ -293,15 +315,48 @@ export default function Game(props) {
                         <div className="mx-4 w-4/8 h-5/6 flex-1" ref={videoGrid}>
 
                         </div>
-                        <button
+                        {/* <button
                             className="color #fff bg-blue-300 h-5/6 w-1/8"
                             onClick={() => temporaryButton()} // put the user's id here
                         >
                             Switch Video
-                        </button>
+                        </button> */}
+                        {!isMobile && (
+                            <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6 ">
+                                <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">
+                                    {/* {game.messages.map((msg) => (
+                            <div className={getMessageColor(msg.type)} key={msg.message}>
+                                {msg.type === "normal" ? `${msg.username}: ` : ""} {msg.message}
+                            </div>
+                        ))} */}
+                                </div>
+                                <input
+                                    className="w-full border border-gray rounded px-2 mb-2"
+                                    placeholder="Type your guess here..."
+                                    value={message}
+                                    onChange={(e) => setMessage(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            if (message !== "") sendMessage();
+                                        }
+                                    }}
+                                />
+                            </div>
+                        )}
 
-                        <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
-                            <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">
+
+                    </div>
+                    {isMobile && (
+                        < div
+                            className={`flex flex-col bg-blue-200 px-2 ${isMobile ? 'h-[200px] max-h-[400px]' : 'h-3/6 max-h-96'
+                                }`}
+                            style={{ maxHeight: '50vh' }}
+                        >
+                            <div
+                                className="flex-1 flex flex-col justify-end  overflow-auto"
+                                id="messages"
+                            // Adjust the maximum height as needed
+                            >
                                 {/* {game.messages.map((msg) => (
                             <div className={getMessageColor(msg.type)} key={msg.message}>
                                 {msg.type === "normal" ? `${msg.username}: ` : ""} {msg.message}
@@ -320,11 +375,12 @@ export default function Game(props) {
                                 }}
                             />
                         </div>
-                    </div>
-                </div>
+                    )
+                    }
+                </div >
             )
             }
-        </div>
+        </div >
 
     );
 };

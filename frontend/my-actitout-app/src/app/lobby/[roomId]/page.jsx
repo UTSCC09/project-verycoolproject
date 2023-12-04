@@ -57,6 +57,7 @@ const Lobby = (params) => {
     useEffect(() => {
         const handleUnload = (e) => {
             socket.disonnect()
+            e.preventDefault()
             replace("/");
         };
 
