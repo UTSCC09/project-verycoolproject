@@ -56,8 +56,7 @@ const Lobby = (params) => {
 
     useEffect(() => {
         const handleUnload = (e) => {
-            socket.disonnect()
-            e.preventDefault()
+            socket.destroy()
             replace("/");
         };
 
@@ -87,6 +86,7 @@ const Lobby = (params) => {
                 dispatch(setRound(gameData.curr_round));
                 dispatch(setEndTime(gameData.endTime));
                 dispatch(setWord(gameData.word));
+                dispatch(setactTime(gameData.actTime));
 
                 if (gameData.screen === "lobby") { dispatch(showLobby()); }
                 else { dispatch(showGame()); }
@@ -144,7 +144,7 @@ const Lobby = (params) => {
     };
 
     const startGame = () => {
-        if (game.players.length < 0) return;
+        if (game.players.length < 2) return;
         socket.emit(`set:start`, {
             roomId: roomId,
         });

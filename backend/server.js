@@ -88,7 +88,6 @@ const AssignNewAdmin = async (io, roomId) => {
 
 
 const removePlayer = async (socket, roomId, userId, username) => {
-  console.log("disconnected")
   io.to(roomId).emit('user-disconnected', { userId: userId, username: username });
   io.to(roomId).emit('new-message', { username: "", message: `${username} left the game`, type: "left" });
   try {
@@ -101,13 +100,13 @@ const removePlayer = async (socket, roomId, userId, username) => {
     );
     if (room) {
 
-      if (room.players.length === 0) {
+      if (room.players.length <= 1) {
+        io.to(roomId).emit("game-end")
         await room.deleteOne({ _id: roomId });
       } else {
         if (room.admin === socket.id) {
           const new_owner = await AssignNewAdmin(io, roomId);
           if (new_owner) {
-            console.log("new admin assigned " + new_owner);
             io.to(new_owner).emit("set:admin"); // set message to the new admin only
             io.to(roomId).emit('new:admin', { username: username, message: "Is the New Admin!", type: "join" });
             await Room.findByIdAndUpdate(roomId, { $set: { admin: new_owner } }
@@ -119,7 +118,7 @@ const removePlayer = async (socket, roomId, userId, username) => {
       await User.deleteOne({ _id: userId });
     }
   } catch (err) {
-    console.log(err)
+    console.error(err)
   }
 };
 
@@ -137,7 +136,6 @@ async function addScore(userId, timeLeft) {
 }
 
 const setRoomOwner = async (socket, roomId) => {
-  console.log("first person =" + socket.id);
 
   try {
     // Find the room by ID
@@ -157,7 +155,6 @@ const setRoomOwner = async (socket, roomId) => {
 const setUserSocketId = async (socketId, userId) => {
   try {
     await User.findByIdAndUpdate(userId, { socketId: socketId });
-    console.log("set the user socket id");
   } catch (error) {
     console.error('Error updating user:', error);
     return;
@@ -178,7 +175,6 @@ io.on(`connection`, socket => {
     // if the first person is entering a room then sets the as the admin of room 
     const room = io.sockets.adapter.rooms.get(roomId);
     if (!room) {
-      console.log("i am the orignal admin")
       io.to(socket.id).emit("set:admin");
       setRoomOwner(socket, roomId)
     }
@@ -188,8 +184,6 @@ io.on(`connection`, socket => {
 
 
     socket.join(roomId)
-
-    console.log("Room ID: " + roomId + " | User ID: " + userId + " | username " + username + " | socketId " + socket.id)
 
     socket.to(roomId).emit('user-connected', {
       id: userId,
@@ -202,8 +196,6 @@ io.on(`connection`, socket => {
 
 
     socket.on('join-game', async (roomId, userId) => {
-
-      console.log(userId + " joined video room")
       socket.to(roomId).emit('user-connected-game', userId)
       socket.on('disconnect', () => {
         socket.to(roomId).emit('user-disconnected-game', userId)
@@ -218,9 +210,7 @@ io.on(`connection`, socket => {
 
   socket.on('get-current-player', async (roomId) => {
     const room = await Room.findById(roomId);
-    console.log(`Someone is looking for current player in room ${roomId}`)
     if (room){
-      console.log(`Sending current player: ${room.currentPlayer}`)
       io.to(socket.id).emit("current-player", `${room.currentPlayer}`);
     }
   })
@@ -308,10 +298,8 @@ io.on(`connection`, socket => {
       const room = await Room.findOne({ _id: roomId });
       if (room) {
         if (room.admin === socket.id) {
-          console.log("kick from  Room ID: " + roomId + "user kciked =" + kickedId);
           removePlayer(socket, roomId, kickedId, kickedUsername);
           const user = await User.findById(kickedId)
-          console.log(user)
           if (user) {
             io.to(user.socketId).emit('new:kicked');
           }
@@ -324,7 +312,9 @@ io.on(`connection`, socket => {
     }
   })
 
-  
+  socket.on('exiting-game', async (userId) => {
+    await User.deleteOne({_id: userId})
+  })
 
   // Listening for a message event 
   socket.on('message', (data) => {
@@ -336,8 +326,6 @@ io.on(`connection`, socket => {
 
   socket.on('correct-guess', async (data) => {
     const { roomId, userId, username, timeLeft } = data;
-    console.log("Correct guess in room " + roomId);
-
     try {
       const check = await Room.findById(roomId);
       if (check) {
@@ -355,7 +343,6 @@ io.on(`connection`, socket => {
         io.to(roomId).emit('new-message', { username: "", message: `${username} guessed the answer`, type: "correct" });
         await addScore(userId, timeLeft);
         if (room.correctPlayers.length >= room.players.length - 1) { // Check if current turn is done
-          console.log("Everyone has guessed")
           room.correctPlayers = [];
 
           if (room.nextPlayers.length == 0) {
@@ -382,7 +369,6 @@ io.on(`connection`, socket => {
           const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
           const currentPlayer = room.nextPlayers.pop();
           io.to(roomId).emit('new-round', { player: currentPlayer._id, endTimer: endTime, round: room.curr_round });
-          console.log('new word sent, current player: ' + currentPlayer._id)
           room.endTime = endTime;
           room.word = newWord;
           room.currentPlayer = currentPlayer._id;
@@ -390,7 +376,7 @@ io.on(`connection`, socket => {
 
         }
       } else {
-        console.log('Room not found');
+        console.error('Room not found');
       }
     } catch (error) {
       console.error('Error updating room:', error);
@@ -405,7 +391,6 @@ io.on(`connection`, socket => {
         return;
       }
 
-      console.log("Round timer ended")
       room.correctPlayers = [];
 
       if (room.nextPlayers.length == 0) {
@@ -432,7 +417,6 @@ io.on(`connection`, socket => {
       const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
       const currentPlayer = room.nextPlayers.pop();
       io.to(roomId).emit('new-round', { player: currentPlayer._id, endTimer: endTime, round: room.curr_round });
-      console.log('new word sent, current player: ' + currentPlayer._id)
       room.endTime = endTime;
       room.word = newWord;
       room.currentPlayer = currentPlayer._id;

@@ -87,6 +87,21 @@ export default function Game(props) {
         };
     };
 
+    const stopCamera = () => {
+        if (myVideo.current && myVideo.current.srcObject) {
+            const stream = myVideo.current.srcObject;
+            const tracks = stream.getTracks();
+
+            tracks.forEach((track) => {
+                if (track.kind === 'video') {
+                    track.stop(); // Stop the video track
+                }
+            });
+
+            myVideo.current.srcObject = null; // Clear the video source object
+        }
+    };
+
     function sendMessage() {
         if (message == game.word) {
             if (user.id != currentPlayerId.current) {
@@ -206,6 +221,7 @@ export default function Game(props) {
         setStreams([]);
     };
 
+
     useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
         //socket.emit('join-room', roomId, user.id);
 
@@ -227,9 +243,9 @@ export default function Game(props) {
             clearInterval(activeTimer);
             cleanupPeers();
             setGameOver(true);
-            setTimeout(() => {
-                push("/")
-            }, 10000);
+            socket.emit("exiting-game", user.id)
+            socket.destroy();
+            stopCamera();
         })
 
         socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
@@ -271,12 +287,6 @@ export default function Game(props) {
                 return "";
         }
     };
-
-    function temporaryButton() {
-        socket.emit("round-end", { roomId: roomId });
-    }
-
-
 
     return (
         <div>

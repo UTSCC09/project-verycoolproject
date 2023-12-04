@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     id: '',
-    username: 'lord',
+    username: 'cool person',
     score: 0,
     rank: 0,
     correct: 0
