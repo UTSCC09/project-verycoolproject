@@ -60,11 +60,6 @@ const Main = () => {
       if (room_id !== null) {
         roomData = await getRoomById(room_id);
       }
-      else {
-        //  randomly finds a room from database and redirect to /lobby/roomid
-        roomData = await getRandomRoom();
-
-      }
 
       // Check if the room exists
       if (roomData) {
@@ -167,20 +162,22 @@ const Main = () => {
               </div>
 
 
-              <div>
-                <button
-                  className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
-                  onClick={playGame}
-                >
-                  Play
-                </button>
-                <button
-                  className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
-                  onClick={createGame}
-                >
-                  Create A Game
-                </button>
-              </div>
+                  <div>
+                    {room_id !== null && ( // Conditionally render the Play button
+                      <button
+                        className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
+                        onClick={playGame}
+                      >
+                        Join Room
+                      </button>
+                    )}
+                    <button
+                      className="block bg-green-500 hover:bg-green-600 w-full text-white rounded h-10 mt-4 mb-1"
+                      onClick={createGame}
+                    >
+                      Create A Game
+                    </button>
+                  </div>
 
 
             </form>
