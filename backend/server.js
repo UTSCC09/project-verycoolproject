@@ -351,10 +351,18 @@ io.on(`connection`, socket => {
 
             if (room.curr_round > room.rounds) {
               // Game end logic
-              room.screen = "lobby"
-              room.word = ""
-              room.curr_round = 0
-              await room.save();
+              await Room.findOneAndUpdate(
+                { _id: roomId },
+                {
+                  $set: {
+                    screen: "lobby",
+                    word: "",
+                    curr_round: 0,
+                  }
+                },
+                { new: true }
+              )
+
               io.to(roomId).emit('game-end');
               return;
             }
@@ -369,10 +377,21 @@ io.on(`connection`, socket => {
           const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
           const currentPlayer = room.nextPlayers.pop();
           io.to(roomId).emit('new-round', { player: currentPlayer._id, endTimer: endTime, round: room.curr_round });
-          room.endTime = endTime;
-          room.word = newWord;
-          room.currentPlayer = currentPlayer._id;
-          await room.save();
+          await Room.findOneAndUpdate(
+            { _id: roomId },
+            {
+              $set: {
+                players: room.players,
+                correctPlayers: room.correctPlayers,
+                nextPlayers: room.nextPlayers,
+                currentPlayer: currentPlayer,
+                word: newWord,
+                endTime: endTime,
+                curr_round: room.curr_round,
+              }
+            },
+            { new: true }
+          )
 
         }
       } else {
@@ -399,10 +418,18 @@ io.on(`connection`, socket => {
 
         if (room.curr_round > room.rounds) {
           // Game end logic
-          room.screen = "lobby"
-          room.word = ""
-          room.curr_round = 0
-          await room.save();
+          await Room.findOneAndUpdate(
+            { _id: roomId },
+            {
+              $set: {
+                screen: "lobby",
+                word: "",
+                curr_round: 0,
+              }
+            },
+            { new: true }
+          )
+
           io.to(roomId).emit('game-end');
           return;
         }
@@ -417,10 +444,21 @@ io.on(`connection`, socket => {
       const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
       const currentPlayer = room.nextPlayers.pop();
       io.to(roomId).emit('new-round', { player: currentPlayer._id, endTimer: endTime, round: room.curr_round });
-      room.endTime = endTime;
-      room.word = newWord;
-      room.currentPlayer = currentPlayer._id;
-      await room.save();
+      await Room.findOneAndUpdate(
+        { _id: roomId },
+        {
+          $set: {
+            players: room.players,
+            correctPlayers: room.correctPlayers,
+            nextPlayers: room.nextPlayers,
+            currentPlayer: currentPlayer,
+            word: newWord,
+            endTime: endTime,
+            curr_round: room.curr_round,
+          }
+        },
+        { new: true }
+      )
     }
   })
 })
