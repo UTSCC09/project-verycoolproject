@@ -6,6 +6,7 @@ const create_room = async (req, res) => {
         const { userId } = req.body;
         const newRoom = new Room({ players: [userId] });
         await newRoom.save();
+        await User.findByIdAndUpdate(userId, { room: newRoom._id });
         res.json({ roomId: newRoom._id });
     } catch (error) {
         console.error('Error creating room:', error);

@@ -22,9 +22,6 @@ export default function Game(props) {
 
     const game = useSelector(selectGameState);
 
-    const currentDate = new Date();
-    currentDate.setSeconds(currentDate.getSeconds() + game.startEnd.end);
-
     const [peers, setPeers] = useState([]);
     const [streams, setStreams] = useState([]);
     const myVideo = useRef();
@@ -260,7 +257,7 @@ export default function Game(props) {
                         <div>
                             {countdown} <span className="ml-3">Round {game.curr_round} of {game.rounds}</span>
                         </div>
-                        <div className="text-center flex-1 tracking-[3px]">{game.word}</div>
+                        {user.id === currentPlayerId.current && (<div className="text-center flex-1 tracking-[3px]">{game.word}</div>)}
                     </div>
                     <div className="flex justify-between h-[600px]">
                         <div className="w-3/8  rounded">

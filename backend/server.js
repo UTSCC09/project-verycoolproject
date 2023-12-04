@@ -335,6 +335,12 @@ io.on(`connection`, socket => {
     console.log("Correct guess in room " + roomId);
 
     try {
+      const check = await Room.findById(roomId);
+      if (check) {
+        if (check.correctPlayers.includes(userId))
+          return;
+      }
+      
       const room = await Room.findByIdAndUpdate(
         roomId,
         { $addToSet: { correctPlayers: userId } },
