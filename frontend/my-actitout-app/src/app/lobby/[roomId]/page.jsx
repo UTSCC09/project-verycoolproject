@@ -7,8 +7,6 @@ import { useDispatch, useSelector } from "react-redux";
 import Game from "./game"
 
 
-
-
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import "./lobby.css"
 
@@ -48,7 +46,7 @@ const Lobby = (params) => {
     const user = useSelector(selectUserState);
     const game = useSelector(selectGameState);
     const [popup, setPopup] = useState("");
-   
+
     const [loading, setLoading] = useState(true);
     const [isCreator, setCreator] = useState(false);
     const { push, back, replace } = useRouter();
@@ -56,16 +54,18 @@ const Lobby = (params) => {
 
     const [socket, setSocket] = useState();
 
-    // useEffect(() => {
-    //     const initializeSocket = async () => {
-    //         if (roomId) {
-    //             const _socket = await io(process.env.NEXT_PUBLIC_BACKEND);
-    //             setSocket(_socket);
-    //             // setLoading(false);
-    //         }
-    //     };
-    //     initializeSocket();
-    // }, [roomId]);
+    useEffect(() => {
+        const handleUnload = (e) => {
+            socket.disonnect()
+            replace("/");
+        };
+
+        window.addEventListener('beforeunload', handleUnload);
+
+        return () => {
+            window.removeEventListener('beforeunload', handleUnload);
+        };
+    }, []);
 
 
 

@@ -26,7 +26,8 @@ export default function Game(props) {
     const [streams, setStreams] = useState([]);
     const myVideo = useRef();
     const videoGrid = useRef(null);
-    const peersRef = useRef([]);
+
+
     const myPeer = useRef();
     const [countdown, updateCountdown] = useState(0);
     let activeTimer;
@@ -66,10 +67,10 @@ export default function Game(props) {
 
     function sendMessage() {
         if (message == game.word) {
-            if (user.id != currentPlayerId.current){
+            if (user.id != currentPlayerId.current) {
                 socket.emit('correct-guess', { roomId: roomId, userId: user.id, username: user.username, timeLeft: countdown })
             }
-            
+
         }
         else {
             socket.emit('message', { message: message, type: "normal", username: user.username, roomId: roomId });
@@ -182,7 +183,7 @@ export default function Game(props) {
             clearInterval(activeTimer);
             setGameOver(true);
             setTimeout(() => {
-                dispatch(showLobby());
+                push("/")
             }, 10000);
         })
 

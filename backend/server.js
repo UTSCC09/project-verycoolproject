@@ -99,32 +99,23 @@ const removePlayer = async (socket, roomId, userId, username) => {
       },
       { new: true }
     );
-
     if (room) {
-
-      const index = room.players.indexOf(userId);
-      if (index !== -1) {
-        room.players.splice(index, 1);
-      }
-
 
       if (room.players.length === 0) {
         await room.deleteOne({ _id: roomId });
-      }
-      else {
+      } else {
         if (room.admin === socket.id) {
           const new_owner = await AssignNewAdmin(io, roomId);
           if (new_owner) {
             console.log("new admin assigned " + new_owner);
             io.to(new_owner).emit("set:admin"); // set message to the new admin only
-            room.admin = new_owner;
             io.to(roomId).emit('new:admin', { username: username, message: "Is the New Admin!", type: "join" });
+            await Room.findByIdAndUpdate(roomId, { $set: { admin: new_owner } }
+            );
           }
         }
-        // Save the updated room
-        await room.save();
       }
-
+      // Delete the user
       await User.deleteOne({ _id: userId });
     }
   } catch (err) {
@@ -328,8 +319,7 @@ io.on(`connection`, socket => {
   // Listening for a message event 
   socket.on('message', (data) => {
     const { message, type, username, roomId } = data;
-    if(isAlphanumericWithSpaces(message))
-    {
+    if (isAlphanumericWithSpaces(message)) {
       io.to(roomId).emit('new-message', { username: username, message: message, type: type });
     }
   })
@@ -344,7 +334,7 @@ io.on(`connection`, socket => {
         if (check.correctPlayers.includes(userId))
           return;
       }
-      
+
       const room = await Room.findByIdAndUpdate(
         roomId,
         { $addToSet: { correctPlayers: userId } },
