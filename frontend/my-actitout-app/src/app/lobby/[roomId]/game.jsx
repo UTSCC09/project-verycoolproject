@@ -33,7 +33,7 @@ export default function Game(props) {
     const [message, setMessage] = useState("");
     const dispatch = useDispatch();
 
-    let currentPlayerId = null; // This will control who's video is being played
+    const currentPlayerId = useRef(null); // This will control who's video is being played
 
     const startCountdown = (endTimer) => {
         if (activeTimer) {
@@ -64,16 +64,13 @@ export default function Game(props) {
         };
     };
 
-    const sendMessage = () => {
+    function sendMessage() {
         if (message == game.word) {
-            socket.emit('correct-guess', { roomId: roomId, userId: user.id })
-            // if (game.corrects >= game.players.length - 1) {
-            //     socket.emit("round-end", { roomId: roomId, players: game.players })
-            // }
+            if (user.id != currentPlayerId.current){
+                socket.emit('correct-guess', { roomId: roomId, userId: user.id })
+            }
         }
         socket.emit('message', { message: message, type: "normal", username: user.username, roomId: roomId });
-        // socket.emit('new-round', { message: message, roomId: roomId });
-        // socket.emit("message", message);
         setMessage("");
     };
 
@@ -91,7 +88,7 @@ export default function Game(props) {
             addVideoStream(video, userVideoStream);
             streams[userId] = userVideoStream;
             console.log("Initialized stream of: " + userId)
-            switchVideo(currentPlayerId);
+            switchVideo(currentPlayerId.current);
         });
         call.on('close', () => {
             video.remove();
@@ -117,14 +114,14 @@ export default function Game(props) {
 
         myVideo.current = document.createElement('video');
 
-        myPeer.current = new Peer(user.id); //user.id not initialized??
+        myPeer.current = new Peer(user.id);
 
         myPeer.current.on('open', id => {
             socket.emit("join-game", roomId, id);
             addVideoStream(myVideo.current, stream);
             streams[myPeer.current.id] = stream;
             console.log("Set stream of: " + myPeer.current.id + " to " + streams[myPeer.current.id])
-            switchVideo(currentPlayerId);
+            switchVideo(currentPlayerId.current);
             myPeer.current.on('call', call => {
                 call.answer(stream);
                 const video = document.createElement('video');
@@ -132,7 +129,7 @@ export default function Game(props) {
                     addVideoStream(video, userVideoStream);
                     streams[call.peer] = userVideoStream
                     console.log("Set stream of: " + call.peer + " to " + streams[call.peer])
-                    switchVideo(currentPlayerId);
+                    switchVideo(currentPlayerId.current);
                 });
             });
 
@@ -167,12 +164,12 @@ export default function Game(props) {
         })
 
         socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
-            console.log("New round started");
             const { player, endTimer, round } = data
             dispatch(setRound(round))
-            currentPlayerId = player;
-            switchVideo(currentPlayerId);
+            currentPlayerId.current = player;
+            switchVideo(currentPlayerId.current);
             startCountdown(endTimer);
+            console.log("New round started: Active player is " + currentPlayerId.current);
         })
 
         // socket.on("update-correct-guess", () => {
@@ -216,7 +213,7 @@ export default function Game(props) {
     };
 
     function temporaryButton() {
-        socket.emit("round-end", { roomId: roomId, players: game.players });
+        socket.emit("round-end", { roomId: roomId });
     }
 
 

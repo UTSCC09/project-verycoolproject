@@ -311,9 +311,9 @@ io.on(`connection`, socket => {
   })
 
   socket.on('correct-guess', async (data) => {
-    const { roomId, userId, players } = data;
+    const { roomId, userId } = data;
     console.log("Correct guess in room " + roomId);
-  
+    
     try {
       const room = await Room.findByIdAndUpdate(
         roomId,
