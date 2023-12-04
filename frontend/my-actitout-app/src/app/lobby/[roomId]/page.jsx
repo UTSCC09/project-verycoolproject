@@ -14,7 +14,6 @@ import "./lobby.css"
 
 import {
     clearGameState,
-    setStartEnd,
     setCorrects,
     setRound,
     setWord,
@@ -27,7 +26,7 @@ import {
     setCustomWords,
     setAllPlayers,
     addPlayer,
-    setTimerLeft,
+    setEndTime,
     removePlayer,
     showLobby,
     showGame
@@ -53,9 +52,6 @@ const Lobby = (params) => {
     const [loading, setLoading] = useState(true);
     const [isCreator, setCreator] = useState(false);
     const { push, back, replace } = useRouter();
-    useEffect(() => {
-        console.log(document.cookie);
-    }, [])
 
 
     const [socket, setSocket] = useState();
@@ -80,21 +76,18 @@ const Lobby = (params) => {
 
                 // Make API call to get game data
                 const gameData = await getRoomById(roomId);
-                const { screen, admin, rounds, actTime, customWords, startEnd, curr_round, timerLeft } = gameData;
-                console.log(screen);
-                console.log(game.screen);
                 const { players } = await get_players(roomId);
                 // Dispatch action to update game state in Redux
                 dispatch(setAllPlayers(players));
-                dispatch(setadmin(admin));
-                dispatch(setRounds(rounds));
-                dispatch(setactTime(actTime));
-                dispatch(setCustomWords(customWords));
-                dispatch(setStartEnd(startEnd));
-                dispatch(setRound(curr_round));
-                dispatch(setTimerLeft(timerLeft));
+                dispatch(setadmin(gameData.admin));
+                dispatch(setRounds(gameData.rounds));
+                dispatch(setactTime(gameData.actTime));
+                dispatch(setCustomWords(gameData.customWords));
+                dispatch(setRound(gameData.curr_round));
+                dispatch(setEndTime(gameData.endTime));
+                dispatch(setWord(gameData.word));
 
-                if (screen === "lobby") { dispatch(showLobby()); }
+                if (gameData.screen === "lobby") { dispatch(showLobby()); }
                 else { dispatch(showGame()); }
 
             } catch (error) {
@@ -112,9 +105,6 @@ const Lobby = (params) => {
             try {
                 await Promise.all([initializeSocket(), fetchData()]);
             } finally {
-                // setLoading(false) here in case of success or error
-                console.log(game);
-                console.log(socket);
                 setLoading(false);
             }
         };
@@ -125,12 +115,10 @@ const Lobby = (params) => {
 
 
     const addplayer = (player) => {
-        console.log("Player added");
         dispatch(addPlayer(player));
     };
 
     const deleteplayer = (userId, username) => {
-        console.log("Player removed");
         dispatch(removePlayer(userId));
     };
 
@@ -145,7 +133,6 @@ const Lobby = (params) => {
     };
 
     const setGameActTime = (time, emit = true) => {
-        console.log("setting act time");
         dispatch(setactTime(time));
         dispatch(setStartEnd({ start: 0, end: time }))
         if (emit) {
@@ -202,7 +189,6 @@ const Lobby = (params) => {
         });
 
         socket.on("new:time", ({ time }) => {
-            console.log("new time")
             setGameActTime(time, false);
         });
         socket.on("new:customword", ({ word }) => {
@@ -221,7 +207,6 @@ const Lobby = (params) => {
         });
 
         socket.on("set:admin", () => {
-            console.log("i am the new admin");
             setCreator(true);
         });
         return () => {

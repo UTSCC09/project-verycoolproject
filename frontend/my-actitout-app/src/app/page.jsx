@@ -53,7 +53,6 @@ const Main = () => {
     try {
 
       const userId = await createUser(username);
-      console.log(document.cookie);
       dispatch(set_userid(userId))
 
       let roomData;
@@ -101,7 +100,6 @@ const Main = () => {
     setLoading(true);
     try {
       const userId = await createUser(username);
-      console.log(userId)
       dispatch(set_userid(userId))
 
       //create a room wiht owner id

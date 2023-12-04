@@ -1,16 +1,11 @@
 "use client"
 function send(method, url, data) {
-    console.log(method, url, data);
-    console.log(process.env.NEXT_PUBLIC_BACKEND, url);
     return fetch(`${process.env.NEXT_PUBLIC_BACKEND}${url}`, {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: data ? JSON.stringify(data) : null,
     })
         .then((response) => {
-
-            response.headers.forEach((head) => { console.log(head) });
-            console.log(response.headers.getSetCookie());
             return response.json()
         })
         .catch((error) => {

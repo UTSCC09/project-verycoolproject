@@ -4,7 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { Avatar, Logo } from "../../../components";
 
 import { VideoStream } from "../../../components/VideoStream/VideoStream"
-import { setStartEnd, setWord, setCorrects, showLobby, setRound, updateScore, sortPlayers } from "../../../store/GameRoom/gameRoomSlice";
+import { setWord, showLobby, setRound, updateScore, sortPlayers } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import { getPlayersByRoom } from "@/api/api.mjs";
@@ -48,7 +48,6 @@ export default function Game(props) {
                 socket.emit("round-end", { roomId: roomId })
                 clear();
             } else {
-                //console.log(seconds);
                 updateCountdown(seconds);
             }
         }, 1000);
@@ -79,14 +78,11 @@ export default function Game(props) {
     };
 
     function updateScoreboard() {
-        console.log(game.players);
         getPlayersByRoom(roomId).then((data) => {
-            console.log(game.players)
             data.forEach((dbPlayer) => {
                 dispatch(updateScore({ id: dbPlayer._id, score: dbPlayer.score }))
             });
             dispatch(sortPlayers());
-            console.log(game.players);
         })
     }
 
@@ -200,32 +196,20 @@ export default function Game(props) {
             console.log("New round started: Active player is " + currentPlayerId.current);
         })
 
-        // socket.on("update-correct-guess", () => {
-        //     dispatch(setCorrects(game.corrects + 1));
-        //     console.log("Corrects so far: " + game.corrects +"/"+game.players.length );
-        //     if (game.corrects >= game.players.length) {
-        //         socket.emit("round-end", { roomId: roomId, players: game.players })
-        //     }
-        // })
-
         socket.on("new-message", (data) => {
-            console.log(data);
             let div = document.createElement("div");
             div.className = getMessageColor(data.type);
             div.innerHTML = `${data.type === "normal" ? `${data.username}: ${data.message}` : `${data.message}`}`;
             document.getElementById("messages").appendChild(div);
         })
 
-        startCountdown(new Date().getTime());
+        startCountdown(game.endTime);
 
         return () => {
             socket.off("new-message");
             socket.off("new-word");
         };
     }, []);
-
-
-    // console.log(game.startEnd.end);
 
     const getMessageColor = (type) => {
         switch (type) {
