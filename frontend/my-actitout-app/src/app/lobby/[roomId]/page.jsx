@@ -129,7 +129,6 @@ const Lobby = (params) => {
     const deleteplayer = (userId, username) => {
         console.log("Player removed");
         dispatch(removePlayer(userId));
-        dispatch(setCorrects(Math.max(game.corrects - 1, 0)));
     };
 
     const setGameRounds = (val, emit = true) => {

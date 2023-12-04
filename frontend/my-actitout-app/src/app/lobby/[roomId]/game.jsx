@@ -140,10 +140,17 @@ export default function Game(props) {
             socket.on('user-disconnected-game', userId => {
                 if (peers[userId]) {
                     peers[userId].close();
-                    delete peers[userId];
+                    const updatedPeers = peers.filter((id) => id !== userId )
+                    setPeers(updatedPeers)
                 }
                 if (streams[userId]) {
-                    delete streams[userId];
+                    const updatedStreams = streams.filter((id) => id !== userId )
+                    setStreams(updatedStreams)
+                }
+                if (currentPlayerId.current == userId){
+                    setTimeout(() => {
+                        socket.emit('round-end', {roomId: roomId})
+                    }, 1000)
                 }
             });
         })

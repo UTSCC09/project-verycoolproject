@@ -93,7 +93,14 @@ const removePlayer = async (socket, roomId, userId, username) => {
   io.to(roomId).emit('user-disconnected', { userId: userId, username: username });
   io.to(roomId).emit('new-message', { username: "", message: `${username} left the game`, type: "left" });
   try {
-    const room = await Room.findById(roomId);
+    const room = await Room.findByIdAndUpdate(
+      roomId,
+      {
+        $pull: { players: userId, nextPlayers: userId }
+      },
+      { new: true }
+    );
+
     if (room) {
 
       if (room.players.length === 0) {
@@ -108,15 +115,9 @@ const removePlayer = async (socket, roomId, userId, username) => {
             room.admin = new_owner;
             io.to(roomId).emit('new:admin', { username: username, message: "Is the New Admin!", type: "join" });
           }
-        }
-        // Remove the user from the players array
-        const index = room.players.indexOf(userId);
-        if (index !== -1) {
-          room.players.splice(index, 1);
-        }
 
-        // Save the updated room
-        await room.save();
+          await room.save();
+        }
       }
 
       await User.deleteOne({ _id: userId });
@@ -188,7 +189,7 @@ io.on(`connection`, socket => {
 
     socket.on('join-game', (roomId, userId) => {
 
-      console.log(userId + "joined video room")
+      console.log(userId + " joined video room")
       socket.to(roomId).emit('user-connected-game', userId)
 
       socket.on('disconnect', () => {
@@ -364,7 +365,7 @@ io.on(`connection`, socket => {
   });
 
   socket.on('round-end', async (data) => {
-    const { roomId, socketId } = data
+    const { roomId } = data
     const room = await Room.findById(roomId)
     if (room) {
       if (room.admin != socket.id){
