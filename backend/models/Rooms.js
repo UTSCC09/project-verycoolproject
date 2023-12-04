@@ -23,10 +23,6 @@ const RoomSchema = new Schema({
         type: Array,
         default: [],
     },
-    messages: {
-        type: Array,
-        default: [],
-    },
     word: {
         type: String,
         default: '',
@@ -48,23 +44,7 @@ const RoomSchema = new Schema({
     nextPlayers: {
         type: Array,
         default: [],
-    },
-    startEnd: {
-        type: {
-            start: {
-                type: Number,
-                default: 0,
-            },
-            end: {
-                type: Number,
-                default: 60,
-            },
-        },
-        default: {
-            start: 0,
-            end: 60,
-        },
-    },
+    }
 });
 
 

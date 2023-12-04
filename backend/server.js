@@ -1,7 +1,6 @@
 // Importing modules using ESM syntax
 import express from "express";
 import { config as dotenvConfig } from "dotenv";
-import http from "http";
 import { createServer } from "http";
 import { Server as socketIO } from "socket.io";
 import cors from "cors";
@@ -175,6 +174,11 @@ const setUserSocketId = async (socketId, userId) => {
 
 };
 
+//chatgpt using following prompt: "if im suing validator.isAlphanumeric to sanitize, how can i have it still allow spaces?" response too long to comment here
+const isAlphanumericWithSpaces = (input) => {
+  return /^[a-zA-Z0-9 ]+$/.test(input);
+};
+
 
 
 io.on(`connection`, socket => {
@@ -324,10 +328,10 @@ io.on(`connection`, socket => {
   // Listening for a message event 
   socket.on('message', (data) => {
     const { message, type, username, roomId } = data;
-    console.log("Message: " + message + " | Room ID: " + roomId + " | Username: " + username)
-
-    io.to(roomId).emit('new-message', { username: username, message: message, type: type });
-    //console.log('message sent')
+    if(isAlphanumericWithSpaces(message))
+    {
+      io.to(roomId).emit('new-message', { username: username, message: message, type: type });
+    }
   })
 
   socket.on('correct-guess', async (data) => {
@@ -419,13 +423,15 @@ io.on(`connection`, socket => {
       }
 
       // Next turn logic
-      io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+      const newWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
+      io.to(roomId).emit('new-word', `${newWord}`);
       const currentDate = new Date();
       const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
       const currentPlayer = room.nextPlayers.pop();
       io.to(roomId).emit('new-round', { player: currentPlayer._id, endTimer: endTime, round: room.curr_round });
       console.log('new word sent, current player: ' + currentPlayer._id)
       room.endTime = endTime;
+      room.word = newWord;
       await room.save();
     }
   })

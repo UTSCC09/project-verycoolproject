@@ -19,7 +19,9 @@ const create_room = async (req, res) => {
 const get_random_room = async (req, res) => {
     console.log("Random room");
     try {
-        const rooms = await Room.find({ 'players': { $size: { $lte: 8 } } }).limit(1);
+        const rooms = await Room.find({
+            $expr: { $lte: [{ $size: '$players' }, 8] }
+          }).limit(1);
 
         if (rooms.length > 0) {
             const randomRoom = rooms[0];
@@ -173,26 +175,6 @@ const addPlayerToRoom = async (req, res) => {
         console.error('Error adding player to room:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
-};
-
-//Endpoint to retrieve all player usernames in a room
-const getRoundData = async (req, res) => {
-    try {
-        const { roomId } = req.body;
-
-        // Find the room by ID
-        const room = await Room.findById(roomId, 'num_correct players ');
-
-        if (!room) {
-            return res.status(404).json({ error: 'Room not found' });
-        }
-
-        res.json({ players: playerDetails })
-    } catch (error) {
-        console.error('Error retrieving players:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
-    }
-
 };
 
 export default { get_players, check_room_exist, addPlayerToRoom, removePlayerFromRoom, create_room, deleteRoom, get_random_room, get_room_by_id };

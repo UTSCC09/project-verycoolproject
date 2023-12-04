@@ -2,10 +2,16 @@ import { User } from "../models/User.js";
 
 import { parse, serialize } from "cookie";
 
+//chatgpt using following prompt: "if im suing validator.isAlphanumeric to sanitize, how can i have it still allow spaces?" response too long to comment here
+const isAlphanumericWithSpaces = (input) => {
+    return /^[a-zA-Z0-9 ]+$/.test(input);
+  };
+
 // Create a new user
 const create_new_user = async (req, res) => {
     try {
-        const { username } = req.body;
+        let { username } = req.body;
+        if(!isAlphanumericWithSpaces(username)){username = "badperson"}
         const newUser = new User({ username });
         const savedUser = await newUser.save();
 
