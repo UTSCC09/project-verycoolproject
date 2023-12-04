@@ -89,7 +89,6 @@ const Main = () => {
         const roomData = await createRoom(userId);
         const { roomId } = roomData
         push(`lobby/${roomId}`);
-        console.error(error);
       }
     } catch (err) {
       console.error(err);
@@ -180,6 +179,3 @@ const Main = () => {
 };
 
 export default Main;
-
-
-
