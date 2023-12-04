@@ -45,6 +45,10 @@ const RoomSchema = new Schema({
         type: Array,
         default: [],
     },
+    nextPlayers: {
+        type: Array,
+        default: [],
+    },
     startEnd: {
         type: {
             start: {
