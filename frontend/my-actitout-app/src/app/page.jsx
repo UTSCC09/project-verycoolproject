@@ -4,11 +4,9 @@ import { createAvatar } from '@dicebear/core';
 import { adventurer } from '@dicebear/collection';
 import { sanitize } from "isomorphic-dompurify";
 import { useRouter, useSearchParams } from 'next/navigation';
-import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { selectProperty } from '../selectors/useSelector';
 import { setUser, set_username, set_userid } from "../store/User/userSlice";
-import Load from "../../public/loading-white.gif"
 import { Logo } from "../components/"
 import { v1 } from "uuid"
 
@@ -23,7 +21,9 @@ const Main = () => {
   const [password, setPassword] = useState("");
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
+  const [popup, setPopup] = useState("");
   const { push } = useRouter();
+
 
   const searchParams = useSearchParams();
   const room_id = searchParams.get('id');
@@ -58,7 +58,6 @@ const Main = () => {
       //check if user has passed a room id  to join
       if (room_id !== null) {
         roomData = await getRoomById(room_id);
-        console.log("roomData")
       }
       else {
         //  randomly finds a room from database and redirect to /lobby/roomid
@@ -66,13 +65,17 @@ const Main = () => {
 
       }
 
-      console.log(roomData)
       // Check if the room exists
       if (roomData) {
         // Redirect to the existing room
-        const { _id } = roomData;
+        const { _id, players } = roomData;
 
-        console.log("add user to existing room")
+        if (players.length >= 8) {
+          setLoading(false);
+          setPopup("Room is Full!")
+          return;
+        }
+
         addPlayerToRoom(_id, userId)
           .then(() => {
             push(`lobby/${_id}`);
@@ -81,17 +84,9 @@ const Main = () => {
             // Your code to handle any errors that occurred during the addition
             console.error(error);
           });
-
       }
       else {
-        console.log("no room exist")
-        // Create a new room  and make new user in db and then redirect to the newly created room
-        //create a room with owner id
-        const roomData = await createRoom(userId);
-        const { roomId } = roomData
-        push(`lobby/${roomId}`);
-
-
+        setPopup("No rooms are Available! Create one :)")
       }
     } catch (err) {
       console.error(err);
@@ -115,8 +110,10 @@ const Main = () => {
       push(`lobby/${roomId}`);
 
     } catch (err) {
-      console.error(err);
+      // console.error(err);
       setLoading(false);
+      console.error(err);
+      setPopup("No rooms are Available!")
     }
   };
 
@@ -124,8 +121,23 @@ const Main = () => {
   return (
     <div className="h-full dead-center">
       {loading ? (
-        // <img src={Load} alt="loading" />
-        <h1>loading</h1>
+        <div className="loader"></div>
+      ) : popup !== "" ? (
+        <div>
+          <div className="blur"></div>
+          <div className="popup-container">
+            <h2>{popup}</h2>
+            {popup && (
+              <button
+                onClick={() => setPopup("")}
+                className="bg-blue-500 hover:bg-blue-700 text-white font-bold my-5 py- px-4 rounded"
+              >
+                Ok
+              </button>
+              // <button onClick={() => setPopup("")}>Ok</button>
+            )}
+          </div>
+        </div>
       ) : (
         <div className=" flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
           <Logo />
@@ -178,6 +190,7 @@ const Main = () => {
           </div>
         </div>
       )}
+
     </div>
   );
 };
