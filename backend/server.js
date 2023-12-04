@@ -103,6 +103,12 @@ const removePlayer = async (socket, roomId, userId, username) => {
 
     if (room) {
 
+      const index = room.players.indexOf(userId);
+      if (index !== -1) {
+        room.players.splice(index, 1);
+      }
+
+
       if (room.players.length === 0) {
         await room.deleteOne({ _id: roomId });
       }
@@ -115,9 +121,9 @@ const removePlayer = async (socket, roomId, userId, username) => {
             room.admin = new_owner;
             io.to(roomId).emit('new:admin', { username: username, message: "Is the New Admin!", type: "join" });
           }
-
-          await room.save();
         }
+        // Save the updated room
+        await room.save();
       }
 
       await User.deleteOne({ _id: userId });
@@ -327,7 +333,7 @@ io.on(`connection`, socket => {
   socket.on('correct-guess', async (data) => {
     const { roomId, userId, username, timeLeft } = data;
     console.log("Correct guess in room " + roomId);
-    
+
     try {
       const room = await Room.findByIdAndUpdate(
         roomId,
@@ -341,12 +347,12 @@ io.on(`connection`, socket => {
         if (room.correctPlayers.length >= room.players.length - 1) { // Check if current turn is done
           console.log("Everyone has guessed")
           room.correctPlayers = [];
-          
-          if (room.nextPlayers.length == 0){
+
+          if (room.nextPlayers.length == 0) {
             // Next round
             room.curr_round += 1;
 
-            if (room.curr_round > room.rounds) { 
+            if (room.curr_round > room.rounds) {
               // Game end logic
               room.screen = "lobby"
               room.word = ""
@@ -357,7 +363,7 @@ io.on(`connection`, socket => {
             }
 
             room.nextPlayers = room.players;
-          } 
+          }
 
           // Next turn logic
           console.log('Starting new round...')
@@ -383,7 +389,7 @@ io.on(`connection`, socket => {
     const { roomId } = data
     const room = await Room.findById(roomId)
     if (room) {
-      if (room.admin != socket.id){
+      if (room.admin != socket.id) {
         return;
       }
       console.log("Round timer ended")

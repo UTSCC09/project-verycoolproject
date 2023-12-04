@@ -13,22 +13,25 @@ const create_room = async (req, res) => {
     }
 };
 
+
 // get random room
 const get_random_room = async (req, res) => {
-    console.log("rsnd room");
+    console.log("Random room");
     try {
-        const existingRoom = await Room.findOne();
+        const rooms = await Room.find({ 'players': { $size: { $lte: 8 } } }).limit(1);
 
-        if (existingRoom) {
-            res.json(existingRoom);
+        if (rooms.length > 0) {
+            const randomRoom = rooms[0];
+            res.json(randomRoom);
         } else {
-            res.status(404).json({ error: 'No Room not found' });
+            res.status(404).json({ error: 'No suitable room found' });
         }
     } catch (error) {
         console.error('Error checking room:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 };
+
 
 // check if  room exist 
 const check_room_exist = async (req, res) => {

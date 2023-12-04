@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from 'next/navigation';
 import { Avatar, Inputs } from "../../../components";
-import Load from "../../../../public/loading-white.gif"
 import { useDispatch, useSelector } from "react-redux";
 import Game from "./game"
 
@@ -35,6 +34,7 @@ import { set_id } from "../../../store/User/userSlice";
 
 import { addPlayerToRoom, getRoomById, get_players, getUserId, getUsername, deletUser, deleteRoom } from "../../../api/api.mjs"
 import { io } from 'socket.io-client';
+
 // import { Socket } from "socket.io";
 
 
@@ -46,6 +46,7 @@ const Lobby = (params) => {
     const dispatch = useDispatch();
     const user = useSelector(selectUserState);
     const game = useSelector(selectGameState);
+    const [popup, setPopup] = useState("");
 
     const [loading, setLoading] = useState(true);
     const [isCreator, setCreator] = useState(false);
@@ -210,8 +211,11 @@ const Lobby = (params) => {
         });
 
         socket.on("new:kicked", () => {
-            alert("You have been kicked");
-            push("/");
+            setPopup("You have been kicked")
+            setTimeout(() => {
+                setPopup("");
+                push("/");
+            }, 5000);
         });
 
         socket.on("set:admin", () => {
@@ -231,7 +235,26 @@ const Lobby = (params) => {
         return (
             <div>
                 {loading ? (
-                    <p>Loading...</p>
+                    <div className="flex items-center justify-center h-screen">
+                        <div className="loader"></div>
+                    </div>
+                ) : popup !== "" ? (
+                    <div>
+                        <div className="blur"></div>
+                        <div className="flex items-center justify-center h-screen">
+                            <div className="popup-container">
+                                <h2>{popup}</h2>
+                                {popup && (
+                                    <button
+                                        onClick={() => setPopup("")}
+                                        className="bg-blue-500 hover:bg-blue-700 text-white font-bold my-5 py-2 px-4 rounded"
+                                    >
+                                        Ok
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 ) : (
                     <div className="h-full">
                         <div className="h-32"></div>;
@@ -299,7 +322,7 @@ const Lobby = (params) => {
                                         >
                                             <div
                                                 onClick={() => isCreator && player.id !== user.id && kickPlayer(player.id, player.username)}
-                                                className={"cursor-pointer " + (isCreator && player.id !=user.id ? "kickable-avatar" : "")}
+                                                className={"cursor-pointer " + (isCreator && player.id != user.id ? "kickable-avatar" : "")}
                                             >
                                                 <Avatar seed={player.username} alt={player.id} />
                                             </div>

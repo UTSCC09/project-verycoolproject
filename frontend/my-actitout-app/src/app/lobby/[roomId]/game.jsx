@@ -246,7 +246,6 @@ export default function Game(props) {
     return (
         <div className="flex flex-col">
             <div className="h-32"><Logo /></div>;
-
             <div className="rounded flex items-center bg-blue-50 mb-3 px-5 py-2 font-bold text-gray-600">
                 <div>
                     {countdown} <span className="ml-3">Round {game.curr_round} of {game.rounds}</span>
