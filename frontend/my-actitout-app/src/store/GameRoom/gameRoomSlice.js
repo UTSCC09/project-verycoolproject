@@ -12,23 +12,17 @@ const initialState = {
     screen: "lobby",
     rounds: 2,
     curr_round: 1,
-    actTime: 80,
+    actTime: 60,
     customWords: [],
     players: [],
-    messages: [],
     admin: '',
     turn: '',
     word: '',
-    timerLeft: 0,
-    startEnd: {
-        start: 0,
-        end: 60
-    }
+    corrects: 0,
+    endTime: 0
 };
 
 const setField = (stateKey) => (state, action) => {
-    console.log(action.payload)
-    console.log(stateKey)
     state[stateKey] = action.payload;
 };
 
@@ -47,25 +41,38 @@ export const gameRoomSlice = createSlice({
             }
         },
         setRounds: setField('rounds'),
-        setStartEnd: setField('startEnd'),
         setRound: setField('curr_round'),
         setactTime: setField('actTime'),
         setCustomWords: setField('customWords'),
         setadmin: setField('admin'),
         setTurn: setField('turn'),
         setWord: setField('word'),
+        setCorrects: setField("corrects"),
         setAllPlayers: setField('players'),
+        setEndTime: setField('endTime'),
         addPlayer: (state, action) => {
             state.players.push(action.payload);
+        },
+        sortPlayers: (state) => {
+            state.players.sort((a, b) => b.score - a.score);
+        },
+        updateScore: (state, action) => {
+            const id = action.payload.id;
+            const index = state.players.findIndex((player) => player.id === id);
+            if (index === -1) {
+                console.log("welp")
+            } else {
+                state.players[index].score = action.payload.score;
+            }
         },
         removePlayer: (state, action) => {
             state.players = state.players.filter((p) => p.id !== action.payload);
         },
         showLobby: (state) => {
-            state.screen = "lobby'";
+            state.screen = "lobby";
         },
         showGame: (state) => {
-            state.screen = "in_game";
+            state.screen = "game";
         },
         addMessage: (state, action) => {
             state.messages.push(action.payload);
@@ -88,8 +95,12 @@ export const {
     addPlayer,
     removePlayer,
     setAllPlayers,
+    setCorrects,
     showLobby,
-    showGame
+    showGame,
+    setEndTime,
+    updateScore,
+    sortPlayers
 } = gameRoomSlice.actions;
 
 // export const selectGameState = (RootState) => RootState.game;

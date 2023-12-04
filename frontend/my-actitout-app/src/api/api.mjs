@@ -1,17 +1,33 @@
+"use client"
 function send(method, url, data) {
-    console.log(method, url, data);
-    console.log(process.env.NEXT_PUBLIC_BACKEND, url);
     return fetch(`${process.env.NEXT_PUBLIC_BACKEND}${url}`, {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: data ? JSON.stringify(data) : null,
     })
-        .then((response) => response.json())
+        .then((response) => {
+            return response.json()
+        })
         .catch((error) => {
             console.error("Error in API request:", error);
             throw error;
         });
 }
+
+
+
+export function getUsername() {
+    const usernameMatch = document.cookie.match(/(?:^|; )username=([^;]*)/);
+    if (usernameMatch) {
+        const decodedUsername = decodeURIComponent(usernameMatch[1]);
+        return decodedUsername;
+    } else {
+        return null; // or any other default value you want
+    }
+}
+
+
+
 
 
 export function createUser(username) {
@@ -40,3 +56,11 @@ export function deleteRoom(roomId) {
     return send("DELETE", `/room/delete-room/${roomId}`, null);
 }
 
+export function deleteUser(userId) {
+    return send("DELETE", `/user/${userId}`, null);
+}
+
+//DON'T DELETE THIS ONE
+export function getPlayersByRoom(roomId) {
+    return send("GET", `/user/by-room/${roomId}`, null);
+}

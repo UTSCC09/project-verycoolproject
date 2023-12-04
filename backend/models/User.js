@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+
+import mongoose from "mongoose";
 const { Schema, SchemaTypes, model } = mongoose;
 
 const userSchema = new Schema({
@@ -11,11 +12,12 @@ const userSchema = new Schema({
         type: Number,
         default: 0,
     },
-    room: { type: SchemaTypes.ObjectId, ref: 'Room' },
-    rank: {
-        type: Number,
-        default: 0,
+    socketId:
+    {
+        type: String,
+        default: "",
     },
+    room: { type: SchemaTypes.ObjectId, ref: 'Room' },
     correct: {
         type: Number,
         default: 0,
@@ -23,5 +25,4 @@ const userSchema = new Schema({
 });
 
 const User = model('User', userSchema);
-
-module.exports = User;
+export { User };

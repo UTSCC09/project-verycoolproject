@@ -1,2 +1,2 @@
-module.exports.RoomRoutes = require("./room");
-module.exports.UserRoutes = require("./user");
+export { default as RoomRoutes } from "./room.js";
+export { default as UserRoutes } from "./user.js";

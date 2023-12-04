@@ -1,4 +1,6 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+import { config as dotenvConfig } from "dotenv";
+dotenvConfig();
 
 const uri = `mongodb+srv://actioutusername:${process.env.MONGO_PASS}@actitoutcluster.q3ympoj.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -12,4 +14,4 @@ async function connectToMongoDB() {
     }
 }
 
-module.exports = connectToMongoDB;
+export { connectToMongoDB };

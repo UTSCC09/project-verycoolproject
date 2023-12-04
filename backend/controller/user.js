@@ -1,12 +1,29 @@
-const User = require('../models/User');
+import { User } from "../models/User.js";
+
+import { parse, serialize } from "cookie";
+
+//chatgpt using following prompt: "if im suing validator.isAlphanumeric to sanitize, how can i have it still allow spaces?" response too long to comment here
+const isAlphanumericWithSpaces = (input) => {
+    return /^[a-zA-Z0-9 ]+$/.test(input);
+  };
 
 // Create a new user
 const create_new_user = async (req, res) => {
     try {
-        const { username } = req.body;
+        let { username } = req.body;
+        if(!isAlphanumericWithSpaces(username)){username = "badperson"}
         const newUser = new User({ username });
         const savedUser = await newUser.save();
-        res.json(savedUser._id);
+
+        // Initialize the user's session
+        req.session.userId = savedUser._id;
+        // Set a cookie for the session
+        res.setHeader(
+            "Set-Cookie",
+            serialize('username', username, { path: '/', maxAge: 60 * 60 * 24 * 7, httpOnly: false }),
+        );
+        console.log(savedUser._id)
+        res.status(200).json(savedUser._id);
     } catch (error) {
         console.error('Error creating user:', error);
         res.status(500).json({ error: 'Internal Server Error' });
@@ -60,6 +77,7 @@ const update_user = async (req, res) => {
 // Delete a user by ID
 const delete_user = async (req, res) => {
     try {
+        req.session.destroy();
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) {
             return res.status(404).json({ error: 'User not found' });
@@ -71,8 +89,9 @@ const delete_user = async (req, res) => {
     }
 };
 
+// DON'T DELETE THIS ONE
 // Get all users in a specific room by room ID
-const get_users_by_romm = async (req, res) => {
+const get_users_by_room = async (req, res) => {
     try {
         const usersInRoom = await User.find({ room: req.params.roomId });
         res.json(usersInRoom);
@@ -82,4 +101,7 @@ const get_users_by_romm = async (req, res) => {
     }
 };
 
-module.exports = { create_new_user, get_user_by_id, get_all_user, get_users_by_romm, update_user, delete_user }
+export default {
+    create_new_user, get_all_user, get_user_by_id, get_users_by_room, update_user, delete_user
+};
+

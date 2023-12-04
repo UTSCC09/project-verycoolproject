@@ -3,7 +3,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
     id: '',
-    username: 'lord',
+    username: 'cool person',
     score: 0,
     rank: 0,
     correct: 0
@@ -34,7 +34,6 @@ const userSlice = createSlice({
             localStorage.setItem('score', score);
             localStorage.setItem('rank', rank);
             localStorage.setItem('correct', correct);
-
         },
         set_userid: setLocalStorageValue('id'),
         set_username: setLocalStorageValue('username'),
