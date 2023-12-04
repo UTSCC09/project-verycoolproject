@@ -65,6 +65,21 @@ export default function Game(props) {
         };
     };
 
+    const stopCamera = () => {
+        if (myVideo.current && myVideo.current.srcObject) {
+            const stream = myVideo.current.srcObject;
+            const tracks = stream.getTracks();
+
+            tracks.forEach((track) => {
+                if (track.kind === 'video') {
+                    track.stop(); // Stop the video track
+                }
+            });
+
+            myVideo.current.srcObject = null; // Clear the video source object
+        }
+    };
+
     function sendMessage() {
         if (message == game.word) {
             if (user.id != currentPlayerId.current) {
@@ -184,6 +199,7 @@ export default function Game(props) {
         setStreams([]);
       };
 
+
     useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
         //socket.emit('join-room', roomId, user.id);
 
@@ -205,9 +221,8 @@ export default function Game(props) {
             clearInterval(activeTimer);
             cleanupPeers();
             setGameOver(true);
-            setTimeout(() => {
-                push("/")
-            }, 10000);
+            socket.destroy();
+            stopCamera();
         })
 
         socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
@@ -250,12 +265,6 @@ export default function Game(props) {
         }
     };
 
-    function temporaryButton() {
-        socket.emit("round-end", { roomId: roomId });
-    }
-
-
-
     return (
         <div>
             {gameOver ? (
@@ -293,12 +302,6 @@ export default function Game(props) {
                         <div className="mx-4 w-4/8 h-5/6 flex-1" ref={videoGrid}>
 
                         </div>
-                        <button
-                            className="color #fff bg-blue-300 h-5/6 w-1/8"
-                            onClick={() => temporaryButton()} // put the user's id here
-                        >
-                            Switch Video
-                        </button>
 
                         <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
                             <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">

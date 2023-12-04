@@ -3,12 +3,14 @@ import { Avatar } from "../../../components";
 
 import { useDispatch } from "react-redux";
 import { showLobby } from "../../../store/GameRoom/gameRoomSlice";
+import { useRouter } from 'next/navigation';
 
 
 export default function UserRankings(props) {
 
     const { players } = props
     const dispatch = useDispatch();
+    const { push, back, replace } = useRouter();
 
     // Split the players into top 3 and the rest
     const top3Players = players.slice(0, 3);
@@ -60,10 +62,10 @@ export default function UserRankings(props) {
                 ))}
             </div>
             <button
-                onClick={() => dispatch(showLobby())}
+                onClick={() => push("/")}
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold my-5 py- px-4 rounded"
             >
-                Go to Lobby
+                Leave Game
             </button>
         </div >
     );

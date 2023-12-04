@@ -101,7 +101,8 @@ const removePlayer = async (socket, roomId, userId, username) => {
     );
     if (room) {
 
-      if (room.players.length === 0) {
+      if (room.players.length <= 1) {
+        io.to(roomId).emit("game-end")
         await room.deleteOne({ _id: roomId });
       } else {
         if (room.admin === socket.id) {

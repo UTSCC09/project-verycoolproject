@@ -143,7 +143,7 @@ const Lobby = (params) => {
     };
 
     const startGame = () => {
-        if (game.players.length < 0) return;
+        if (game.players.length < 2) return;
         socket.emit(`set:start`, {
             roomId: roomId,
         });
