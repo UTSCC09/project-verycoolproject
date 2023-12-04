@@ -59,6 +59,15 @@ export const gameRoomSlice = createSlice({
         addPlayer: (state, action) => {
             state.players.push(action.payload);
         },
+        updateScore: (state, action) => {
+            const id = action.payload.id;
+            const index = state.players.findIndex((player) => player.id === id);
+            if (index === -1) {
+                console.log("welp")
+            } else {
+                state.players[index].score = action.payload.score;
+            }
+        },
         removePlayer: (state, action) => {
             state.players = state.players.filter((p) => p.id !== action.payload);
         },
@@ -92,7 +101,8 @@ export const {
     setCorrects,
     showLobby,
     showGame,
-    setTimerLeft
+    setTimerLeft,
+    updateScore
 } = gameRoomSlice.actions;
 
 // export const selectGameState = (RootState) => RootState.game;

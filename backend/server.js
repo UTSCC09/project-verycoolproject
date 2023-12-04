@@ -127,6 +127,19 @@ const removePlayer = async (socket, roomId, userId, username) => {
   }
 };
 
+async function addScore(userId, timeLeft) {
+  try {
+    const user = await User.findById(userId);
+    if (user) {
+      user.score += 100 + timeLeft;
+      await user.save();
+    }
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return;
+  }
+}
+
 const setRoomOwner = async (socket, roomId) => {
   console.log("first person =" + socket.id);
 
@@ -312,7 +325,7 @@ io.on(`connection`, socket => {
   })
 
   socket.on('correct-guess', async (data) => {
-    const { roomId, userId } = data;
+    const { roomId, userId, username, timeLeft } = data;
     console.log("Correct guess in room " + roomId);
     
     try {
@@ -323,6 +336,8 @@ io.on(`connection`, socket => {
       );
 
       if (room) {
+        io.to(roomId).emit('new-message', { username: "", message: `${username} guessed the answer`, type: "correct" });
+        await addScore(userId, timeLeft);
         if (room.correctPlayers.length >= room.players.length - 1) { // Check if current turn is done
           console.log("Everyone has guessed")
           room.correctPlayers = [];

@@ -4,9 +4,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { Avatar, Logo } from "../../../components";
 
 import { VideoStream } from "../../../components/VideoStream/VideoStream"
-import { setStartEnd, setWord, setCorrects, showLobby, setRound } from "../../../store/GameRoom/gameRoomSlice";
+import { setStartEnd, setWord, setCorrects, showLobby, setRound, updateScore } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
+import { getPlayersByRoom } from "@/api/api.mjs";
 import { Peer } from "peerjs"
 
 
@@ -67,12 +68,26 @@ export default function Game(props) {
     function sendMessage() {
         if (message == game.word) {
             if (user.id != currentPlayerId.current){
-                socket.emit('correct-guess', { roomId: roomId, userId: user.id })
+                socket.emit('correct-guess', { roomId: roomId, userId: user.id, username: user.username, timeLeft: countdown })
             }
+            
         }
-        socket.emit('message', { message: message, type: "normal", username: user.username, roomId: roomId });
+        else {
+            socket.emit('message', { message: message, type: "normal", username: user.username, roomId: roomId });
+        }
         setMessage("");
     };
+
+    function updateScoreboard() {
+        console.log(game.players);
+        getPlayersByRoom(roomId).then((data) => {
+            console.log(game.players)
+            data.forEach((dbPlayer) => {
+                dispatch(updateScore({ id: dbPlayer._id, score: dbPlayer.score }))
+            });
+            console.log(game.players);
+        })
+    }
 
     function addVideoStream(video, stream) {
         video.srcObject = stream;
@@ -167,6 +182,7 @@ export default function Game(props) {
         })
 
         socket.on("game-end", (data) => {
+            clearInterval(activeTimer);
             dispatch(showLobby());
         })
 
@@ -175,6 +191,7 @@ export default function Game(props) {
             dispatch(setRound(round))
             currentPlayerId.current = player;
             switchVideo(currentPlayerId.current);
+            updateScoreboard();
             startCountdown(endTimer);
             console.log("New round started: Active player is " + currentPlayerId.current);
         })
@@ -245,7 +262,7 @@ export default function Game(props) {
                             <div className="px-2">#1{player.rank}</div>
                             <div className="flex-1 text-center">
                                 <div className="font-bold">{player.username}</div>
-                                <div className="text-sm">Points:10 {player.points}</div>
+                                <div className="text-sm">{`Points: ${player.score}`}</div>
                             </div>
                             <div>{player.id === game.turn.id && <img src="" />}</div>
                             <div className="w-10 cursor-pointer text-center text-yellow-300">
