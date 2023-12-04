@@ -210,11 +210,10 @@ io.on(`connection`, socket => {
     io.to(roomId).emit('new-message', { username: "", message: `${username} joined the game`, type: "join" });
 
 
-    socket.on('join-game', (roomId, userId) => {
+    socket.on('join-game', async (roomId, userId) => {
 
       console.log(userId + " joined video room")
       socket.to(roomId).emit('user-connected-game', userId)
-
       socket.on('disconnect', () => {
         socket.to(roomId).emit('user-disconnected-game', userId)
       })
@@ -225,6 +224,15 @@ io.on(`connection`, socket => {
     })
     );
   });
+
+  socket.on('get-current-player', async (roomId) => {
+    const room = await Room.findById(roomId);
+    console.log(`Someone is looking for current player in room ${roomId}`)
+    if (room){
+      console.log(`Sending current player: ${room.currentPlayer}`)
+      io.to(socket.id).emit("current-player", `${room.currentPlayer}`);
+    }
+  })
 
   // Listening for a rounds event 
   socket.on('set:rounds', async (data) => {
@@ -325,6 +333,8 @@ io.on(`connection`, socket => {
     }
   })
 
+  
+
   // Listening for a message event 
   socket.on('message', (data) => {
     const { message, type, username, roomId } = data;
@@ -376,14 +386,16 @@ io.on(`connection`, socket => {
           }
 
           // Next turn logic
-          console.log('Starting new round...')
-          io.to(roomId).emit('new-word', `${words[Math.floor(Math.random() * words.length)].toLowerCase()}`);
+          const newWord = words[Math.floor(Math.random() * words.length)].toLowerCase();
+          io.to(roomId).emit('new-word', `${newWord}`);
           const currentDate = new Date();
           const endTime = currentDate.getTime() + (room.actTime + 2) * 1000;
           const currentPlayer = room.nextPlayers.pop();
           io.to(roomId).emit('new-round', { player: currentPlayer._id, endTimer: endTime, round: room.curr_round });
           console.log('new word sent, current player: ' + currentPlayer._id)
           room.endTime = endTime;
+          room.word = newWord;
+          room.currentPlayer = currentPlayer._id;
           await room.save();
 
         }
@@ -402,6 +414,7 @@ io.on(`connection`, socket => {
       if (room.admin != socket.id) {
         return;
       }
+
       console.log("Round timer ended")
       room.correctPlayers = [];
 
@@ -432,6 +445,7 @@ io.on(`connection`, socket => {
       console.log('new word sent, current player: ' + currentPlayer._id)
       room.endTime = endTime;
       room.word = newWord;
+      room.currentPlayer = currentPlayer._id;
       await room.save();
     }
   })

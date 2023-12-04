@@ -44,6 +44,10 @@ const RoomSchema = new Schema({
     nextPlayers: {
         type: Array,
         default: [],
+    },
+    currentPlayer: {
+        type: String,
+        default: '',
     }
 });
 
