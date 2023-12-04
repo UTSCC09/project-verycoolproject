@@ -83,8 +83,9 @@ const delete_user = async (req, res) => {
     }
 };
 
+// DON'T DELETE THIS ONE
 // Get all users in a specific room by room ID
-const get_users_by_romm = async (req, res) => {
+const get_users_by_room = async (req, res) => {
     try {
         const usersInRoom = await User.find({ room: req.params.roomId });
         res.json(usersInRoom);
@@ -95,6 +96,6 @@ const get_users_by_romm = async (req, res) => {
 };
 
 export default {
-    create_new_user, get_all_user, get_user_by_id, get_users_by_romm, update_user, delete_user
+    create_new_user, get_all_user, get_user_by_id, get_users_by_room, update_user, delete_user
 };
 

@@ -65,4 +65,7 @@ export function deleteUser(userId) {
     return send("DELETE", `/user/${userId}`, null);
 }
 
-
+//DON'T DELETE THIS ONE
+export function getPlayersByRoom(roomId) {
+    return send("GET", `/user/by-room/${roomId}`, null);
+}
