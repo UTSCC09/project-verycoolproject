@@ -312,7 +312,9 @@ io.on(`connection`, socket => {
     }
   })
 
-  
+  socket.on('exiting-game', async (userId) => {
+    await User.deleteOne({_id: userId})
+  })
 
   // Listening for a message event 
   socket.on('message', (data) => {

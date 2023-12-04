@@ -56,7 +56,7 @@ const Lobby = (params) => {
 
     useEffect(() => {
         const handleUnload = (e) => {
-            socket.disonnect()
+            socket.destroy()
             replace("/");
         };
 
@@ -86,6 +86,7 @@ const Lobby = (params) => {
                 dispatch(setRound(gameData.curr_round));
                 dispatch(setEndTime(gameData.endTime));
                 dispatch(setWord(gameData.word));
+                dispatch(setactTime(gameData.actTime));
 
                 if (gameData.screen === "lobby") { dispatch(showLobby()); }
                 else { dispatch(showGame()); }

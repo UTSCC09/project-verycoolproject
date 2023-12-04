@@ -62,7 +62,7 @@ export default function UserRankings(props) {
                 ))}
             </div>
             <button
-                onClick={() => push("/")}
+                onClick={() => {dispatch(showLobby()) ; push("/")} }
                 className="bg-blue-500 hover:bg-blue-700 text-white font-bold my-5 py- px-4 rounded"
             >
                 Leave Game

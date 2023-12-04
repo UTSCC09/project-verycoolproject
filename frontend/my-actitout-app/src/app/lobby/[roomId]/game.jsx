@@ -221,6 +221,7 @@ export default function Game(props) {
             clearInterval(activeTimer);
             cleanupPeers();
             setGameOver(true);
+            socket.emit("exiting-game", user.id)
             socket.destroy();
             stopCamera();
         })

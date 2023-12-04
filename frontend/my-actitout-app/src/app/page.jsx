@@ -33,7 +33,6 @@ const Main = () => {
   const roomCodeInput = useRef(null);
 
 
-
   useEffect(() => {
     set_username(document.cookie)
   }, [])
