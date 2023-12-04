@@ -134,7 +134,6 @@ const Lobby = (params) => {
 
     const setGameActTime = (time, emit = true) => {
         dispatch(setactTime(time));
-        dispatch(setStartEnd({ start: 0, end: time }))
         if (emit) {
             socket.emit('set:time', {
                 roomId: roomId,

@@ -110,6 +110,10 @@ export default function Game(props) {
     }
 
     function switchVideo(userId) {
+        if (userId == null){
+            console.log("Null user, trying to fetch current player")
+            socket.emit('get-current-player', roomId)
+        }
         if (videoGrid.current) {
             const video = document.createElement('video');
             addVideoStream(video, streams[userId]);
@@ -133,7 +137,7 @@ export default function Game(props) {
             socket.emit("join-game", roomId, id);
             addVideoStream(myVideo.current, stream);
             streams[myPeer.current.id] = stream;
-            console.log("Set stream of: " + myPeer.current.id + " to " + streams[myPeer.current.id])
+            console.log("Set my stream of: " + myPeer.current.id + " to " + streams[myPeer.current.id])
             switchVideo(currentPlayerId.current);
             myPeer.current.on('call', call => {
                 call.answer(stream);
@@ -163,17 +167,35 @@ export default function Game(props) {
                 if (currentPlayerId.current == userId) {
                     setTimeout(() => {
                         socket.emit('round-end', { roomId: roomId })
-                    }, 1000)
+                    }, 1500)
                 }
             });
         })
 
     }
 
+    const cleanupPeers = () => {
+        if (myPeer.current) {
+          myPeer.current.destroy();
+          myPeer.current = null;
+        }
+      
+        setPeers([]);
+        setStreams([]);
+      };
+
     useEffect(() => { //make sure the sockets only render once and are deleted on any rerenders
         //socket.emit('join-room', roomId, user.id);
-        setupPeers();
 
+        socket.on("current-player", (data) => {
+            console.log("got the current player: " + data)
+            if (currentPlayerId.current == null){
+                currentPlayerId.current = data;
+                switchVideo(currentPlayerId.current);
+            }
+        })
+
+        setupPeers();
 
         socket.on("new-word", (data) => {
             dispatch(setWord(data));
@@ -181,6 +203,7 @@ export default function Game(props) {
 
         socket.on("game-end", (data) => {
             clearInterval(activeTimer);
+            cleanupPeers();
             setGameOver(true);
             setTimeout(() => {
                 push("/")
@@ -209,6 +232,8 @@ export default function Game(props) {
         return () => {
             socket.off("new-message");
             socket.off("new-word");
+            socket.off("current-player")
+            socket.off("new-round")
         };
     }, []);
 
