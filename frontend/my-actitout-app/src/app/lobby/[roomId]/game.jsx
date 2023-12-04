@@ -4,9 +4,10 @@ import React, { useEffect, useState, useRef } from "react";
 import { Avatar, Logo } from "../../../components";
 
 import { VideoStream } from "../../../components/VideoStream/VideoStream"
-import { setStartEnd, setWord, setCorrects, showLobby, setRound } from "../../../store/GameRoom/gameRoomSlice";
+import { setStartEnd, setWord, setCorrects, showLobby, setRound, updateScore, sortPlayers } from "../../../store/GameRoom/gameRoomSlice";
 import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
+import { getPlayersByRoom } from "@/api/api.mjs";
 import { Peer } from "peerjs"
 
 import UserRankings from "./rankings"
@@ -69,13 +70,28 @@ export default function Game(props) {
 
     function sendMessage() {
         if (message == game.word) {
-            if (user.id != currentPlayerId.current) {
-                socket.emit('correct-guess', { roomId: roomId, userId: user.id })
+            if (user.id != currentPlayerId.current){
+                socket.emit('correct-guess', { roomId: roomId, userId: user.id, username: user.username, timeLeft: countdown })
             }
+            
         }
-        socket.emit('message', { message: message, type: "normal", username: user.username, roomId: roomId });
+        else {
+            socket.emit('message', { message: message, type: "normal", username: user.username, roomId: roomId });
+        }
         setMessage("");
     };
+
+    function updateScoreboard() {
+        console.log(game.players);
+        getPlayersByRoom(roomId).then((data) => {
+            console.log(game.players)
+            data.forEach((dbPlayer) => {
+                dispatch(updateScore({ id: dbPlayer._id, score: dbPlayer.score }))
+            });
+            dispatch(sortPlayers());
+            console.log(game.players);
+        })
+    }
 
     function addVideoStream(video, stream) {
         video.srcObject = stream;
@@ -170,6 +186,7 @@ export default function Game(props) {
         })
 
         socket.on("game-end", (data) => {
+            clearInterval(activeTimer);
             setGameOver(true);
             setTimeout(() => {
                 dispatch(showLobby());
@@ -181,6 +198,7 @@ export default function Game(props) {
             dispatch(setRound(round))
             currentPlayerId.current = player;
             switchVideo(currentPlayerId.current);
+            updateScoreboard();
             startCountdown(endTimer);
             console.log("New round started: Active player is " + currentPlayerId.current);
         })
@@ -246,15 +264,15 @@ export default function Game(props) {
                     </div>
                     <div className="flex justify-between h-[600px]">
                         <div className="w-3/8  rounded">
-                            {game.players.map((player) => (
+                            {game.players.map((player, index) => (
                                 <div
                                     className="flex justify-around items-center bg-yellow-50 p-1 border border-b-1 border-white"
                                     key={player.id}
                                 >
-                                    <div className="px-2">#1{player.rank}</div>
+                                    <div className="px-2">#{index + 1}</div>
                                     <div className="flex-1 text-center">
                                         <div className="font-bold">{player.username}</div>
-                                        <div className="text-sm">Points:10 {player.points}</div>
+                                        <div className="text-sm">{`Points: ${player.score}`}</div>
                                     </div>
                                     <div>{player.id === game.turn.id && <img src="" />}</div>
                                     <div className="w-10 cursor-pointer text-center text-yellow-300">

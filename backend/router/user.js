@@ -8,6 +8,6 @@ router.get('/all', UserController.get_all_user);
 router.get('/:id', UserController.get_user_by_id);
 router.put('/:id', UserController.update_user);
 router.delete('/:id', UserController.delete_user);
-router.get('/by-room/:roomId', UserController.get_users_by_romm);
+router.get('/by-room/:roomId', UserController.get_users_by_room);
 
 export default router;

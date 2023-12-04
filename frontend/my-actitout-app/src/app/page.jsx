@@ -83,7 +83,6 @@ const Main = () => {
             push(`lobby/${_id}`);
           })
           .catch((error) => {
-            // Your code to handle any errors that occurred during the addition
             console.error(error);
           });
       }
@@ -110,7 +109,6 @@ const Main = () => {
       const { roomId } = roomData
       setLoading(false);
       push(`lobby/${roomId}`);
-
     } catch (err) {
       // console.error(err);
       setLoading(false);
@@ -198,6 +196,3 @@ const Main = () => {
 };
 
 export default Main;
-
-
-
