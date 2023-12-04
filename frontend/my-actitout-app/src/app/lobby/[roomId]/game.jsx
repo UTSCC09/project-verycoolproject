@@ -9,10 +9,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import { Peer } from "peerjs"
 
+import UserRankings from "./rankings"
 
 
 export default function Game(props) {
 
+
+    const [gameOver, setGameOver] = useState(false);
 
     const { roomId, socket, user } = props;
 
@@ -42,7 +45,7 @@ export default function Game(props) {
 
         const timer = setInterval(() => {
             const curr = new Date().getTime();
-            const seconds = Math.floor((endTimer - curr)/1000);
+            const seconds = Math.floor((endTimer - curr) / 1000);
             if (seconds < 0) {
                 socket.emit("round-end", { roomId: roomId })
                 clear();
@@ -66,7 +69,7 @@ export default function Game(props) {
 
     function sendMessage() {
         if (message == game.word) {
-            if (user.id != currentPlayerId.current){
+            if (user.id != currentPlayerId.current) {
                 socket.emit('correct-guess', { roomId: roomId, userId: user.id })
             }
         }
@@ -140,16 +143,16 @@ export default function Game(props) {
             socket.on('user-disconnected-game', userId => {
                 if (peers[userId]) {
                     peers[userId].close();
-                    const updatedPeers = peers.filter((id) => id !== userId )
+                    const updatedPeers = peers.filter((id) => id !== userId)
                     setPeers(updatedPeers)
                 }
                 if (streams[userId]) {
-                    const updatedStreams = streams.filter((id) => id !== userId )
+                    const updatedStreams = streams.filter((id) => id !== userId)
                     setStreams(updatedStreams)
                 }
-                if (currentPlayerId.current == userId){
+                if (currentPlayerId.current == userId) {
                     setTimeout(() => {
-                        socket.emit('round-end', {roomId: roomId})
+                        socket.emit('round-end', { roomId: roomId })
                     }, 1000)
                 }
             });
@@ -167,7 +170,10 @@ export default function Game(props) {
         })
 
         socket.on("game-end", (data) => {
-            dispatch(showLobby());
+            setGameOver(true);
+            setTimeout(() => {
+                dispatch(showLobby());
+            }, 10000);
         })
 
         socket.on("new-round", (data) => { // When a new round is emitted from server, it will send the new round endTimer
@@ -226,67 +232,75 @@ export default function Game(props) {
 
 
     return (
-        <div className="flex flex-col">
-            <div className="h-32"><Logo /></div>;
-            <div className="rounded flex items-center bg-blue-50 mb-3 px-5 py-2 font-bold text-gray-600">
-                <div>
-                    {countdown} <span className="ml-3">Round {game.curr_round} of {game.rounds}</span>
-                </div>
-                <div className="text-center flex-1 tracking-[3px]">{game.word}</div>
-            </div>
-            <div className="flex justify-between h-[600px]">
-                <div className="w-3/8  rounded">
-                    {game.players.map((player) => (
-                        <div
-                            className="flex justify-around items-center bg-yellow-50 p-1 border border-b-1 border-white"
-                            key={player.id}
-                        >
-                            <div className="px-2">#1{player.rank}</div>
-                            <div className="flex-1 text-center">
-                                <div className="font-bold">{player.username}</div>
-                                <div className="text-sm">Points:10 {player.points}</div>
-                            </div>
-                            <div>{player.id === game.turn.id && <img src="" />}</div>
-                            <div className="w-10 cursor-pointer text-center text-yellow-300">
-                                <Avatar seed={player.username} alt={player.id} />
-                                <div className="text-xs">{player.id === user.id && "You"}</div>
-                                <div className="text-xs">{game.creator === player.id && "Admin"}</div>
-                            </div>
+        <div>
+            {gameOver ? (
+                <UserRankings players={game.players} />
+            ) : (
+                <div className="flex flex-col">
+                    <div className="h-32"><Logo /></div>;
+                    <div className="rounded flex items-center bg-blue-50 mb-3 px-5 py-2 font-bold text-gray-600">
+                        <div>
+                            {countdown} <span className="ml-3">Round {game.curr_round} of {game.rounds}</span>
                         </div>
-                    ))}
-                </div>
-                <div className="mx-4 w-4/8 h-5/6 flex-1" ref={videoGrid}>
+                        <div className="text-center flex-1 tracking-[3px]">{game.word}</div>
+                    </div>
+                    <div className="flex justify-between h-[600px]">
+                        <div className="w-3/8  rounded">
+                            {game.players.map((player) => (
+                                <div
+                                    className="flex justify-around items-center bg-yellow-50 p-1 border border-b-1 border-white"
+                                    key={player.id}
+                                >
+                                    <div className="px-2">#1{player.rank}</div>
+                                    <div className="flex-1 text-center">
+                                        <div className="font-bold">{player.username}</div>
+                                        <div className="text-sm">Points:10 {player.points}</div>
+                                    </div>
+                                    <div>{player.id === game.turn.id && <img src="" />}</div>
+                                    <div className="w-10 cursor-pointer text-center text-yellow-300">
+                                        <Avatar seed={player.username} alt={player.id} />
+                                        <div className="text-xs">{player.id === user.id && "You"}</div>
+                                        <div className="text-xs">{game.creator === player.id && "Admin"}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="mx-4 w-4/8 h-5/6 flex-1" ref={videoGrid}>
 
-                </div>
-                <button
-                    className="color #fff bg-blue-300 h-5/6 w-1/8"
-                    onClick={() => temporaryButton()} // put the user's id here
-                >
-                    Switch Video
-                </button>
+                        </div>
+                        <button
+                            className="color #fff bg-blue-300 h-5/6 w-1/8"
+                            onClick={() => temporaryButton()} // put the user's id here
+                        >
+                            Switch Video
+                        </button>
 
-                <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
-                    <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">
-                        {/* {game.messages.map((msg) => (
+                        <div className="flex w-1/8 flex-col bg-blue-200 px-2 h-5/6">
+                            <div className="flex-1 flex flex-col justify-end overflow-auto" id="messages">
+                                {/* {game.messages.map((msg) => (
                             <div className={getMessageColor(msg.type)} key={msg.message}>
                                 {msg.type === "normal" ? `${msg.username}: ` : ""} {msg.message}
                             </div>
                         ))} */}
+                            </div>
+                            <input
+                                className="w-full border border-gray rounded px-2 mb-2"
+                                placeholder="Type your guess here..."
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        if (message !== "") sendMessage();
+                                    }
+                                }}
+                            />
+                        </div>
                     </div>
-                    <input
-                        className="w-full border border-gray rounded px-2 mb-2"
-                        placeholder="Type your guess here..."
-                        value={message}
-                        onChange={(e) => setMessage(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                                if (message !== "") sendMessage();
-                            }
-                        }}
-                    />
                 </div>
-            </div>
+            )
+            }
         </div>
+
     );
 };
 

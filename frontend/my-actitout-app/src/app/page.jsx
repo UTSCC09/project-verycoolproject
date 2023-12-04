@@ -10,6 +10,8 @@ import { setUser, set_username, set_userid } from "../store/User/userSlice";
 import { Logo } from "../components/"
 import { v1 } from "uuid"
 
+import { UserRankings } from "./lobby/[roomId]/rankings"
+
 
 import { getRandomRoom, createRoom, createUser, addPlayerToRoom, getRoomById, getUsername, deleteUser } from "../api/api.mjs"
 

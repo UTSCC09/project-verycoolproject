@@ -7,6 +7,8 @@ import { useDispatch, useSelector } from "react-redux";
 import Game from "./game"
 
 
+
+
 import { selectGameState, selectUserState } from '../../../selectors/useSelector';
 import "./lobby.css"
 
@@ -47,7 +49,7 @@ const Lobby = (params) => {
     const user = useSelector(selectUserState);
     const game = useSelector(selectGameState);
     const [popup, setPopup] = useState("");
-
+   
     const [loading, setLoading] = useState(true);
     const [isCreator, setCreator] = useState(false);
     const { push, back, replace } = useRouter();
