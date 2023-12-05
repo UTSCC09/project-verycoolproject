@@ -15,7 +15,7 @@ import UserRankings from "./rankings"
 
 export default function Game(props) {
 
-
+    // Learned about PeerJS and group video chats through https://www.youtube.com/watch?v=DvlyzDZDEq4&t=523s
     const [gameOver, setGameOver] = useState(false);
 
     const { roomId, socket, user } = props;
