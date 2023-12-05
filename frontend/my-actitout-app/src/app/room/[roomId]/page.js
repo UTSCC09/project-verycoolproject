@@ -98,7 +98,7 @@ const Room = (params) => {
             });
         });
 
-        socketRef.current = io.connect('http://localhost:4000');
+        socketRef.current = io.connect(process.env.NEXT_PUBLIC_BACKEND);
         socketRef.current.on('user-connected', userId => {
             connectToNewUser(userId, stream);
         });
