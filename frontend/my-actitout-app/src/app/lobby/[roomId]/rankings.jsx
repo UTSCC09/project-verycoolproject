@@ -17,6 +17,7 @@ export default function UserRankings(props) {
     const otherPlayers = players.slice(3);
 
     return (
+        <div className='flex items-center justify-center h-screen'>
         <div className="flex flex-col items-center bg-blue-100 p-8">
             <h1 className="text-4xl font-bold mb-4">Game Over!</h1>
 
@@ -68,5 +69,6 @@ export default function UserRankings(props) {
                 Leave Game
             </button>
         </div >
+        </div>
     );
 }

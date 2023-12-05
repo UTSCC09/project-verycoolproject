@@ -103,7 +103,7 @@ export default function Game(props) {
     };
 
     function sendMessage() {
-        if (message == game.word) {
+        if (message.toLowerCase() == game.word) {
             if (user.id != currentPlayerId.current) {
                 socket.emit('correct-guess', { roomId: roomId, userId: user.id, username: user.username, timeLeft: countdown })
             }
@@ -137,7 +137,6 @@ export default function Game(props) {
         call.on('stream', userVideoStream => {
             addVideoStream(video, userVideoStream);
             streams[userId] = userVideoStream;
-            console.log("Initialized stream of: " + userId)
             switchVideo(currentPlayerId.current);
         });
         call.on('close', () => {
@@ -148,7 +147,6 @@ export default function Game(props) {
 
     function switchVideo(userId) {
         if (userId == null) {
-            console.log("Null user, trying to fetch current player")
             socket.emit('get-current-player', roomId)
         }
         if (videoGrid.current) {
@@ -156,7 +154,6 @@ export default function Game(props) {
             addVideoStream(video, streams[userId]);
             videoGrid.current.innerHTML = "";
             videoGrid.current.appendChild(video);
-            console.log("Playing stream of: " + userId + " | " + streams[userId])
         }
     }
 
@@ -174,7 +171,6 @@ export default function Game(props) {
             socket.emit("join-game", roomId, id);
             addVideoStream(myVideo.current, stream);
             streams[myPeer.current.id] = stream;
-            console.log("Set my stream of: " + myPeer.current.id + " to " + streams[myPeer.current.id])
             switchVideo(currentPlayerId.current);
             myPeer.current.on('call', call => {
                 call.answer(stream);
@@ -182,7 +178,6 @@ export default function Game(props) {
                 call.on('stream', userVideoStream => {
                     addVideoStream(video, userVideoStream);
                     streams[call.peer] = userVideoStream
-                    console.log("Set stream of: " + call.peer + " to " + streams[call.peer])
                     switchVideo(currentPlayerId.current);
                 });
             });
@@ -226,7 +221,6 @@ export default function Game(props) {
         //socket.emit('join-room', roomId, user.id);
 
         socket.on("current-player", (data) => {
-            console.log("got the current player: " + data)
             if (currentPlayerId.current == null) {
                 currentPlayerId.current = data;
                 switchVideo(currentPlayerId.current);
@@ -255,7 +249,6 @@ export default function Game(props) {
             switchVideo(currentPlayerId.current);
             updateScoreboard();
             startCountdown(endTimer);
-            console.log("New round started: Active player is " + currentPlayerId.current);
         })
 
         socket.on("new-message", (data) => {
