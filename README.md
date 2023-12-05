@@ -152,7 +152,7 @@ Along with the socket CRUD methods, there is a REST api is used to post and get 
 * Darren Trieu: PeerJS integration, livestream switching, various game logic components
 
 # One more thing? 
-* There is an extra comment for a citation in the github version vs the deployed version. Otherwise, there is no difference. Our deployed version is the last merge before the comment commit from Roger.
+* There is an extra comment for a citation in the github version vs the deployed version. Otherwise, there is no difference. Our deployed version is the last 'merge branch main' from Roger
 
 # References:
 * Background image from Freepik
